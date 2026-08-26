@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDashboard } from '../../context/DashboardContext';
 import { PlatformId } from '../../types/analytics';
+import { BlackPantherIcon } from '../ui/BlackPantherIcon';
 import { 
   LayoutDashboard, 
   Instagram, 
@@ -10,10 +11,8 @@ import {
   Twitter, 
   Youtube, 
   Music, 
-  Zap, 
   ChevronLeft, 
   ChevronRight,
-  Disc,
   Radio
 } from 'lucide-react';
 
@@ -30,7 +29,7 @@ export const Sidebar: React.FC = () => {
     { id: 'twitter', label: 'X (Twitter)', sub: '@AbelPintos (1.7M)', icon: Twitter, color: 'text-sky-400' },
     { id: 'tiktok', label: 'TikTok', sub: '@abel.pintos.musica', icon: Video, color: 'text-cyan-400' },
     { id: 'threads', label: 'Threads', sub: '@abelpintos (420K)', icon: AtSign, color: 'text-slate-200' },
-    { id: 'simulator', label: 'API Simulator', sub: 'Feeds oficiales', icon: Zap, color: 'text-amber-400', badge: 'LIVE' },
+    { id: 'simulator', label: 'API Simulator', sub: 'Feeds oficiales', icon: BlackPantherIcon, color: 'text-gold-400', badge: 'LIVE' },
   ];
 
   return (
@@ -43,19 +42,19 @@ export const Sidebar: React.FC = () => {
       <div className="p-4 flex items-center justify-between border-b border-gold-400/15">
         {!collapsed ? (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-gold-400 via-amber-500 to-amber-700 flex items-center justify-center shadow-lg shadow-gold-500/20">
-              <Disc className="w-5 h-5 text-slate-950 stroke-[2.5]" />
+            <div className="w-10 h-10 rounded-xl bg-slate-950 p-1.5 border border-gold-400/50 shadow-lg shadow-gold-500/20 flex items-center justify-center">
+              <BlackPantherIcon className="w-7 h-7" />
             </div>
             <div>
               <h1 className="font-extrabold text-sm text-slate-100 tracking-tight leading-none">
-                Abel Pintos<span className="text-gold-400"> Analytics</span>
+                Panter <span className="text-gold-400">Look</span>
               </h1>
-              <span className="text-[10px] text-gold-400/80 font-bold tracking-wider uppercase">Plataformas Oficiales</span>
+              <span className="text-[10px] text-gold-400/90 font-bold tracking-wider uppercase">Ecosistema Digital</span>
             </div>
           </div>
         ) : (
-          <div className="w-10 h-10 mx-auto rounded-xl bg-gradient-to-tr from-gold-400 via-amber-500 to-amber-700 flex items-center justify-center">
-            <Disc className="w-5 h-5 text-slate-950 stroke-[2.5]" />
+          <div className="w-10 h-10 mx-auto rounded-xl bg-slate-950 p-1.5 border border-gold-400/50 flex items-center justify-center">
+            <BlackPantherIcon className="w-7 h-7" />
           </div>
         )}
 
@@ -94,7 +93,7 @@ export const Sidebar: React.FC = () => {
                 </div>
               )}
               {!collapsed && item.badge && (
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gold-500/20 text-gold-300 border border-gold-500/30 animate-pulse">
                   {item.badge}
                 </span>
               )}
@@ -109,7 +108,7 @@ export const Sidebar: React.FC = () => {
           <div className="glass-panel p-3 rounded-xl flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-[11px] font-bold text-slate-300">Live Streaming Data</span>
+              <span className="text-[11px] font-bold text-slate-300">Live Panter Intelligence</span>
             </div>
             <Radio className="w-3.5 h-3.5 text-gold-400" />
           </div>

@@ -3,7 +3,8 @@ import { useDashboard } from '../../context/DashboardContext';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { Twitter, Repeat, MessageSquare, Heart, ExternalLink, Zap } from 'lucide-react';
+import { BlackPantherIcon } from '../ui/BlackPantherIcon';
+import { Twitter, Repeat, MessageSquare, Heart, ExternalLink } from 'lucide-react';
 
 export const TwitterView: React.FC = () => {
   const { platformDataMap, comparisonMode } = useDashboard();
@@ -104,7 +105,7 @@ export const TwitterView: React.FC = () => {
       {/* Evolution Chart */}
       <div className="glass-panel p-6 rounded-2xl">
         <h3 className="text-base font-bold text-slate-100 mb-4 flex items-center gap-2">
-          <Zap className="w-4 h-4 text-sky-400" />
+          <BlackPantherIcon className="w-4 h-4" />
           Evolución de Impresiones en X ({comparisonMode.toUpperCase()})
         </h3>
         <div className="h-72 w-full">

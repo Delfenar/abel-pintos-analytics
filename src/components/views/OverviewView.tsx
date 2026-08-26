@@ -3,6 +3,7 @@ import { useDashboard } from '../../context/DashboardContext';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
 import { CAMPAIGNS } from '../../services/mockDataService';
+import { BlackPantherIcon } from '../ui/BlackPantherIcon';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -21,7 +22,7 @@ import {
   Cell,
   ReferenceDot
 } from 'recharts';
-import { Disc, Award, ShieldCheck, Zap, Layers, Sparkles, Music2, Users, ArrowRightLeft, Flag, Settings } from 'lucide-react';
+import { Disc, Award, ShieldCheck, Layers, Sparkles, Music2, Users, ArrowRightLeft, Flag, Settings } from 'lucide-react';
 
 export const OverviewView: React.FC = () => {
   const { 
@@ -212,7 +213,7 @@ export const OverviewView: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-gold-400" />
+              <BlackPantherIcon className="w-5 h-5" />
               Evolución Comparativa: Periodo Actual vs Comparado ({comparisonMode.toUpperCase()})
             </h3>
             <p className="text-xs text-slate-400">
