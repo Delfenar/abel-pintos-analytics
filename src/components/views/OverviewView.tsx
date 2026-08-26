@@ -24,6 +24,18 @@ import {
 } from 'recharts';
 import { Disc, Award, ShieldCheck, Layers, Sparkles, Music2, Users, ArrowRightLeft, Flag, Settings } from 'lucide-react';
 
+// Custom Panther Face Marker Dot for Recharts Graphs
+const PantherMarkerDot = (props: any) => {
+  const { cx, cy } = props;
+  if (cx === undefined || cy === undefined || isNaN(cx) || isNaN(cy)) return null;
+  return (
+    <g transform={`translate(${cx - 14}, ${cy - 14})`} className="cursor-pointer">
+      <circle cx="14" cy="14" r="15" fill="#0F172A" stroke="#D4AF37" strokeWidth="1.5" className="shadow-lg shadow-gold-500/50" />
+      <BlackPantherIcon size={28} />
+    </g>
+  );
+};
+
 export const OverviewView: React.FC = () => {
   const { 
     globalOverview, 
@@ -55,7 +67,7 @@ export const OverviewView: React.FC = () => {
     ? 'Mismo periodo año anterior (YoY)'
     : comparisonMode === 'wow' ? 'Semana a Semana (WoW)' : comparisonMode === 'mom' ? 'Mes a Mes (MoM)' : 'Año a Año (YoY)';
 
-  // Custom Dual Tooltip with Absolute vs Percentage Display
+  // Custom Dual Tooltip with Absolute vs Percentage Display & Panther Badge
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const cur = payload.find((p: any) => p.dataKey === 'current' || p.dataKey === 'Spotify' || p.dataKey === 'Streams');
@@ -69,19 +81,23 @@ export const OverviewView: React.FC = () => {
       const milestoneMatch = globalOverview.milestones.find(m => m.date === label);
 
       return (
-        <div className="glass-panel p-3.5 rounded-2xl border border-gold-400/40 text-xs shadow-2xl space-y-1.5 bg-slate-950/95 text-slate-100 max-w-xs">
-          <div className="font-extrabold border-b border-slate-800 pb-1 flex items-center justify-between text-gold-300">
-            <span>{label}</span>
+        <div className="glass-panel p-3.5 rounded-2xl border border-gold-400/50 text-xs shadow-2xl space-y-1.5 bg-slate-950/95 text-slate-100 max-w-xs">
+          <div className="font-extrabold border-b border-slate-800 pb-1.5 flex items-center justify-between text-gold-300">
+            <span className="flex items-center gap-1.5">
+              <BlackPantherIcon size={18} />
+              {label}
+            </span>
             {milestoneMatch && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gold-400/20 text-gold-400 border border-gold-400/40 flex items-center gap-1">
-                <Flag className="w-3 h-3" /> Hito
+                <Flag className="w-3 h-3" /> Hito Panter
               </span>
             )}
           </div>
 
           {milestoneMatch && (
-            <div className="p-2 rounded-xl bg-gold-400/10 border border-gold-400/30 text-gold-300 font-semibold text-[11px]">
-              🎯 {milestoneMatch.title}
+            <div className="p-2 rounded-xl bg-gold-400/10 border border-gold-400/30 text-gold-300 font-semibold text-[11px] flex items-center gap-2">
+              <BlackPantherIcon size={16} />
+              <span>🎯 {milestoneMatch.title}</span>
             </div>
           )}
 
@@ -127,8 +143,8 @@ export const OverviewView: React.FC = () => {
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-400/20 border border-gold-400/40 text-gold-300 text-xs font-bold">
-                <Sparkles className="w-3.5 h-3.5" />
-                ARTISTA OFICIAL ABEL PINTOS
+                <BlackPantherIcon size={16} />
+                PANTER LOOK — ABEL PINTOS
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">
                 <ArrowRightLeft className="w-3.5 h-3.5" />
@@ -208,16 +224,16 @@ export const OverviewView: React.FC = () => {
         />
       </div>
 
-      {/* Main Evolution Timeline Chart with Overlay Comparison Curves & Milestone Markers */}
+      {/* Main Evolution Timeline Chart with Panther Face Markers */}
       <div className="glass-panel p-6 rounded-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-              <BlackPantherIcon className="w-5 h-5" />
-              Evolución Comparativa: Periodo Actual vs Comparado ({comparisonMode.toUpperCase()})
+              <BlackPantherIcon size={22} />
+              Gráfico de Evolución Temporal (Marcadores Pantera Negra)
             </h3>
             <p className="text-xs text-slate-400">
-              Superposición de curva actual (sólida) vs periodo anterior ({compModeLabel} - punteada)
+              Superposición de curva actual (sólida) vs periodo anterior ({compModeLabel} - punteada) con cara de Pantera Negra en cada hito
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 text-xs">
@@ -227,17 +243,15 @@ export const OverviewView: React.FC = () => {
             <span className="flex items-center gap-1.5 font-semibold text-slate-400">
               <span className="w-3 h-1 border-t-2 border-dashed border-slate-400" /> Periodo Comparado
             </span>
-            {showMilestones && (
-              <span className="flex items-center gap-1 font-bold text-gold-400">
-                <Flag className="w-3.5 h-3.5" /> Hitos Activados
-              </span>
-            )}
+            <span className="flex items-center gap-1.5 font-bold text-gold-400">
+              <BlackPantherIcon size={16} /> Marcadore Hito Pantera
+            </span>
           </div>
         </div>
 
-        <div className="h-80 w-full">
+        <div className="h-84 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={globalOverview.multiPlatformTimeSeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <AreaChart data={globalOverview.multiPlatformTimeSeries} margin={{ top: 20, right: 20, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorCur" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.4}/>
@@ -248,10 +262,26 @@ export const OverviewView: React.FC = () => {
               <XAxis dataKey="date" stroke="#94A3B8" fontSize={11} tickLine={false} />
               <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="current" name="Periodo Actual" stroke="#D4AF37" strokeWidth={3} fillOpacity={1} fill="url(#colorCur)" />
-              <Area type="monotone" dataKey="comparison" name="Comparación" stroke="#94A3B8" strokeWidth={2} strokeDasharray="5 5" fill="transparent" />
+              <Area 
+                type="monotone" 
+                dataKey="current" 
+                name="Periodo Actual" 
+                stroke="#D4AF37" 
+                strokeWidth={3} 
+                fillOpacity={1} 
+                fill="url(#colorCur)" 
+              />
+              <Area 
+                type="monotone" 
+                dataKey="comparison" 
+                name="Comparación" 
+                stroke="#94A3B8" 
+                strokeWidth={2} 
+                strokeDasharray="5 5" 
+                fill="transparent" 
+              />
 
-              {/* Render Milestone Reference Dots */}
+              {/* Render Black Panther Face Icons as Graph Markers on Milestones */}
               {showMilestones && globalOverview.multiPlatformTimeSeries.map((point) => {
                 if (point.milestone) {
                   return (
@@ -259,10 +289,7 @@ export const OverviewView: React.FC = () => {
                       key={point.date}
                       x={point.date}
                       y={point.current}
-                      r={6}
-                      fill="#D4AF37"
-                      stroke="#07090E"
-                      strokeWidth={2}
+                      shape={<PantherMarkerDot />}
                     />
                   );
                 }
