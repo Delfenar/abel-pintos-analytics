@@ -355,7 +355,17 @@ export const OverviewView: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#0F172A', borderColor: '#D4AF37', borderRadius: '0.75rem', fontSize: '12px' }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#0F172A', 
+                    borderColor: '#D4AF37', 
+                    borderRadius: '0.75rem', 
+                    fontSize: '12px',
+                    color: '#FFFFFF'
+                  }} 
+                  itemStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
+                  labelStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>

@@ -161,7 +161,11 @@ export const YouTubeView: React.FC = () => {
                     <Cell key={`cell-${idx}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#0F172A', borderColor: '#FF0000', borderRadius: '0.75rem', fontSize: '12px' }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#0F172A', borderColor: '#FF0000', borderRadius: '0.75rem', fontSize: '12px', color: '#FFFFFF' }} 
+                  itemStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
+                  labelStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
