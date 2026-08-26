@@ -6,7 +6,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import { Instagram, Bookmark, Link2, Sparkles, Heart, MessageSquare, Share2 } from 'lucide-react';
 
 export const InstagramView: React.FC = () => {
-  const { platformDataMap } = useDashboard();
+  const { platformDataMap, comparisonMode } = useDashboard();
   const data = platformDataMap.instagram;
 
   if (!data) return null;
@@ -35,7 +35,9 @@ export const InstagramView: React.FC = () => {
         <StatCard
           label={data.kpis.engagementRate.label}
           value={data.kpis.engagementRate.value}
-          previousValue={data.kpis.engagementRate.previousValue}
+          previousWeekValue={data.kpis.engagementRate.previousWeekValue}
+          previousMonthValue={data.kpis.engagementRate.previousMonthValue}
+          previousYearValue={data.kpis.engagementRate.previousYearValue}
           unit="%"
           format="percent"
           brandColor="#E1306C"
@@ -45,7 +47,9 @@ export const InstagramView: React.FC = () => {
         <StatCard
           label={data.kpis.savedRatio.label}
           value={data.kpis.savedRatio.value}
-          previousValue={data.kpis.savedRatio.previousValue}
+          previousWeekValue={data.kpis.savedRatio.previousWeekValue}
+          previousMonthValue={data.kpis.savedRatio.previousMonthValue}
+          previousYearValue={data.kpis.savedRatio.previousYearValue}
           unit="%"
           format="percent"
           brandColor="#D4AF37"
@@ -55,7 +59,9 @@ export const InstagramView: React.FC = () => {
         <StatCard
           label={data.kpis.bioCtr.label}
           value={data.kpis.bioCtr.value}
-          previousValue={data.kpis.bioCtr.previousValue}
+          previousWeekValue={data.kpis.bioCtr.previousWeekValue}
+          previousMonthValue={data.kpis.bioCtr.previousMonthValue}
+          previousYearValue={data.kpis.bioCtr.previousYearValue}
           unit="%"
           format="percent"
           brandColor="#C5A059"
@@ -69,35 +75,45 @@ export const InstagramView: React.FC = () => {
         <StatCard
           label={data.metrics.reach.label}
           value={data.metrics.reach.value}
-          previousValue={data.metrics.reach.previousValue}
+          previousWeekValue={data.metrics.reach.previousWeekValue}
+          previousMonthValue={data.metrics.reach.previousMonthValue}
+          previousYearValue={data.metrics.reach.previousYearValue}
           sparkline={data.metrics.reach.sparkline}
           brandColor="#E1306C"
         />
         <StatCard
           label={data.metrics.impressions.label}
           value={data.metrics.impressions.value}
-          previousValue={data.metrics.impressions.previousValue}
+          previousWeekValue={data.metrics.impressions.previousWeekValue}
+          previousMonthValue={data.metrics.impressions.previousMonthValue}
+          previousYearValue={data.metrics.impressions.previousYearValue}
           sparkline={data.metrics.impressions.sparkline}
           brandColor="#C13584"
         />
         <StatCard
           label={data.metrics.interactions.label}
           value={data.metrics.interactions.value}
-          previousValue={data.metrics.interactions.previousValue}
+          previousWeekValue={data.metrics.interactions.previousWeekValue}
+          previousMonthValue={data.metrics.interactions.previousMonthValue}
+          previousYearValue={data.metrics.interactions.previousYearValue}
           sparkline={data.metrics.interactions.sparkline}
           brandColor="#D4AF37"
         />
         <StatCard
           label={data.metrics.followers.label}
           value={data.metrics.followers.value}
-          previousValue={data.metrics.followers.previousValue}
+          previousWeekValue={data.metrics.followers.previousWeekValue}
+          previousMonthValue={data.metrics.followers.previousMonthValue}
+          previousYearValue={data.metrics.followers.previousYearValue}
           sparkline={data.metrics.followers.sparkline}
           brandColor="#F56040"
         />
         <StatCard
           label={data.metrics.profileVisits.label}
           value={data.metrics.profileVisits.value}
-          previousValue={data.metrics.profileVisits.previousValue}
+          previousWeekValue={data.metrics.profileVisits.previousWeekValue}
+          previousMonthValue={data.metrics.profileVisits.previousMonthValue}
+          previousYearValue={data.metrics.profileVisits.previousYearValue}
           sparkline={data.metrics.profileVisits.sparkline}
           brandColor="#FFDC80"
         />
@@ -108,7 +124,7 @@ export const InstagramView: React.FC = () => {
         <div className="glass-panel p-6 rounded-2xl lg:col-span-2">
           <h3 className="text-base font-bold text-slate-100 mb-4 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-pink-400" />
-            Alcance e Impresiones Diarias en @abelpintos
+            Alcance e Impresiones Diarias en @abelpintos ({comparisonMode.toUpperCase()})
           </h3>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -123,8 +139,8 @@ export const InstagramView: React.FC = () => {
                 <XAxis dataKey="date" stroke="#94A3B8" fontSize={11} />
                 <YAxis stroke="#94A3B8" fontSize={11} />
                 <Tooltip contentStyle={{ backgroundColor: '#0F172A', borderColor: '#E1306C', borderRadius: '0.75rem', fontSize: '12px' }} />
-                <Area type="monotone" dataKey="Alcance" stroke="#E1306C" strokeWidth={2.5} fill="url(#igAlcance)" />
-                <Area type="monotone" dataKey="Interacciones" stroke="#D4AF37" strokeWidth={2} fill="transparent" />
+                <Area type="monotone" dataKey="current" name="Alcance Actual" stroke="#E1306C" strokeWidth={2.5} fill="url(#igAlcance)" />
+                <Area type="monotone" dataKey="comparison" name={`Alcance Comparado (${comparisonMode.toUpperCase()})`} stroke="#94A3B8" strokeWidth={2} strokeDasharray="5 5" fill="transparent" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

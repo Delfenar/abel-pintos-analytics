@@ -6,7 +6,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import { Twitter, Repeat, MessageSquare, Heart, ExternalLink, Zap } from 'lucide-react';
 
 export const TwitterView: React.FC = () => {
-  const { platformDataMap } = useDashboard();
+  const { platformDataMap, comparisonMode } = useDashboard();
   const data = platformDataMap.twitter;
 
   if (!data) return null;
@@ -14,14 +14,14 @@ export const TwitterView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="glass-panel p-6 rounded-3xl bg-gradient-to-r from-sky-950/40 via-slate-900 to-blue-950/30 border border-sky-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel-gold p-6 rounded-3xl border border-sky-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-bold mb-2">
             <Twitter className="w-4 h-4" />
-            X / Twitter Analytics
+            X / Twitter Analytics — @AbelPintos
           </div>
-          <h2 className="text-2xl font-black text-slate-100">Métricas & KPIs de X (Twitter)</h2>
-          <p className="text-xs text-slate-400 mt-1">Análisis de impresiones, retweets, impresiones por tweet y clics en enlaces</p>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-100">Abel Pintos en X (Twitter)</h2>
+          <p className="text-xs text-slate-300 mt-1">1.7M+ Seguidores | Análisis de impresiones, retweets y clics en enlaces</p>
         </div>
       </div>
 
@@ -30,7 +30,9 @@ export const TwitterView: React.FC = () => {
         <StatCard
           label={data.kpis.interactionRate.label}
           value={data.kpis.interactionRate.value}
-          previousValue={data.kpis.interactionRate.previousValue}
+          previousWeekValue={data.kpis.interactionRate.previousWeekValue}
+          previousMonthValue={data.kpis.interactionRate.previousMonthValue}
+          previousYearValue={data.kpis.interactionRate.previousYearValue}
           unit="%"
           format="percent"
           brandColor="#1DA1F2"
@@ -40,9 +42,11 @@ export const TwitterView: React.FC = () => {
         <StatCard
           label={data.kpis.avgReach.label}
           value={data.kpis.avgReach.value}
-          previousValue={data.kpis.avgReach.previousValue}
+          previousWeekValue={data.kpis.avgReach.previousWeekValue}
+          previousMonthValue={data.kpis.avgReach.previousMonthValue}
+          previousYearValue={data.kpis.avgReach.previousYearValue}
           unit="usuarios"
-          brandColor="#0C7ABF"
+          brandColor="#D4AF37"
           status={data.kpis.avgReach.status}
           description={data.kpis.avgReach.description}
         />
@@ -53,35 +57,45 @@ export const TwitterView: React.FC = () => {
         <StatCard
           label={data.metrics.impressions.label}
           value={data.metrics.impressions.value}
-          previousValue={data.metrics.impressions.previousValue}
+          previousWeekValue={data.metrics.impressions.previousWeekValue}
+          previousMonthValue={data.metrics.impressions.previousMonthValue}
+          previousYearValue={data.metrics.impressions.previousYearValue}
           sparkline={data.metrics.impressions.sparkline}
           brandColor="#1DA1F2"
         />
         <StatCard
           label={data.metrics.retweets.label}
           value={data.metrics.retweets.value}
-          previousValue={data.metrics.retweets.previousValue}
+          previousWeekValue={data.metrics.retweets.previousWeekValue}
+          previousMonthValue={data.metrics.retweets.previousMonthValue}
+          previousYearValue={data.metrics.retweets.previousYearValue}
           sparkline={data.metrics.retweets.sparkline}
-          brandColor="#0C7ABF"
+          brandColor="#D4AF37"
         />
         <StatCard
           label={data.metrics.quotes.label}
           value={data.metrics.quotes.value}
-          previousValue={data.metrics.quotes.previousValue}
+          previousWeekValue={data.metrics.quotes.previousWeekValue}
+          previousMonthValue={data.metrics.quotes.previousMonthValue}
+          previousYearValue={data.metrics.quotes.previousYearValue}
           sparkline={data.metrics.quotes.sparkline}
           brandColor="#71C9F8"
         />
         <StatCard
           label={data.metrics.likes.label}
           value={data.metrics.likes.value}
-          previousValue={data.metrics.likes.previousValue}
+          previousWeekValue={data.metrics.likes.previousWeekValue}
+          previousMonthValue={data.metrics.likes.previousMonthValue}
+          previousYearValue={data.metrics.likes.previousYearValue}
           sparkline={data.metrics.likes.sparkline}
           brandColor="#38BDF8"
         />
         <StatCard
           label={data.metrics.linkClicks.label}
           value={data.metrics.linkClicks.value}
-          previousValue={data.metrics.linkClicks.previousValue}
+          previousWeekValue={data.metrics.linkClicks.previousWeekValue}
+          previousMonthValue={data.metrics.linkClicks.previousMonthValue}
+          previousYearValue={data.metrics.linkClicks.previousYearValue}
           sparkline={data.metrics.linkClicks.sparkline}
           brandColor="#0284C7"
         />
@@ -91,7 +105,7 @@ export const TwitterView: React.FC = () => {
       <div className="glass-panel p-6 rounded-2xl">
         <h3 className="text-base font-bold text-slate-100 mb-4 flex items-center gap-2">
           <Zap className="w-4 h-4 text-sky-400" />
-          Evolución de Impresiones & Me Gusta (X)
+          Evolución de Impresiones en X ({comparisonMode.toUpperCase()})
         </h3>
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -105,14 +119,15 @@ export const TwitterView: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
               <XAxis dataKey="date" stroke="#94A3B8" fontSize={11} />
               <YAxis stroke="#94A3B8" fontSize={11} />
-              <Tooltip contentStyle={{ backgroundColor: '#0F172A', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '12px' }} />
-              <Area type="monotone" dataKey="Impresiones" stroke="#1DA1F2" strokeWidth={2.5} fill="url(#twImp)" />
+              <Tooltip contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1DA1F2', borderRadius: '0.75rem', fontSize: '12px' }} />
+              <Area type="monotone" dataKey="current" name="Impresiones Actuales" stroke="#1DA1F2" strokeWidth={2.5} fill="url(#twImp)" />
+              <Area type="monotone" dataKey="comparison" name={`Comparadas (${comparisonMode.toUpperCase()})`} stroke="#94A3B8" strokeWidth={2} strokeDasharray="5 5" fill="transparent" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <ContentTable title="Tweets Destacados" items={data.topContent} />
+      <ContentTable title="Tweets Destacados de Abel Pintos" items={data.topContent} />
     </div>
   );
 };

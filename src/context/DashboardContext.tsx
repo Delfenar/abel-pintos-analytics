@@ -1,5 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { PlatformId, DateRangeKey, CampaignId, PlatformData, GlobalOverviewData, ApiPayloadSample } from '../types/analytics';
+import { 
+  PlatformId, 
+  DateRangeKey, 
+  ComparisonMode, 
+  CustomComparisonType,
+  DisplayValueType,
+  CustomThresholds,
+  CampaignId, 
+  PlatformData, 
+  GlobalOverviewData, 
+  ApiPayloadSample 
+} from '../types/analytics';
 import { getMockPlatformData, getGlobalOverviewData, getMockApiPayloads } from '../services/mockDataService';
 
 interface DashboardContextType {
@@ -7,12 +18,30 @@ interface DashboardContextType {
   setActiveView: (view: PlatformId) => void;
   dateRange: DateRangeKey;
   setDateRange: (range: DateRangeKey) => void;
+  comparisonMode: ComparisonMode;
+  setComparisonMode: (mode: ComparisonMode) => void;
+  customComparisonType: CustomComparisonType;
+  setCustomComparisonType: (type: CustomComparisonType) => void;
   activeCampaign: CampaignId;
   setActiveCampaign: (campaign: CampaignId) => void;
   customStartDate: string;
   setCustomStartDate: (date: string) => void;
   customEndDate: string;
   setCustomEndDate: (date: string) => void;
+  customCompStartDate: string;
+  setCustomCompStartDate: (date: string) => void;
+  customCompEndDate: string;
+  setCustomCompEndDate: (date: string) => void;
+  displayValueType: DisplayValueType;
+  setDisplayValueType: (type: DisplayValueType) => void;
+  customThresholds: CustomThresholds;
+  setCustomThresholds: (thresholds: CustomThresholds) => void;
+  showMilestones: boolean;
+  setShowMilestones: (show: boolean) => void;
+  isSettingsModalOpen: boolean;
+  setIsSettingsModalOpen: (open: boolean) => void;
+  pinnedMetrics: Record<string, boolean>;
+  togglePinnedMetric: (id: string) => void;
   isDarkMode: boolean;
   toggleDarkMode: () => void;
   platformDataMap: Record<string, PlatformData>;
@@ -29,21 +58,51 @@ const DashboardContext = createContext<DashboardContextType | undefined>(undefin
 export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeView, setActiveView] = useState<PlatformId>('overview');
   const [dateRange, setDateRange] = useState<DateRangeKey>('28d');
+  const [comparisonMode, setComparisonMode] = useState<ComparisonMode>('mom');
+  const [customComparisonType, setCustomComparisonType] = useState<CustomComparisonType>('previous_period');
   const [activeCampaign, setActiveCampaign] = useState<CampaignId>('all');
+  
   const [customStartDate, setCustomStartDate] = useState<string>('2026-08-01');
   const [customEndDate, setCustomEndDate] = useState<string>('2026-08-26');
+  const [customCompStartDate, setCustomCompStartDate] = useState<string>('2026-07-05');
+  const [customCompEndDate, setCustomCompEndDate] = useState<string>('2026-07-31');
+
+  const [displayValueType, setDisplayValueType] = useState<DisplayValueType>('percentage');
+  const [customThresholds, setCustomThresholds] = useState<CustomThresholds>({
+    positiveThreshold: 5,
+    negativeThreshold: -10,
+    ignoreNoise: true,
+  });
+
+  const [showMilestones, setShowMilestones] = useState<boolean>(true);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
+  const [pinnedMetrics, setPinnedMetrics] = useState<Record<string, boolean>>({
+    listeners: true,
+    reach: true,
+    totalReach: true,
+    views: true,
+  });
+
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const [platformDataMap, setPlatformDataMap] = useState<Record<string, PlatformData>>(() => getMockPlatformData(dateRange, activeCampaign));
-  const [globalOverview, setGlobalOverview] = useState<GlobalOverviewData>(() => getGlobalOverviewData(dateRange, activeCampaign));
+  const togglePinnedMetric = (id: string) => {
+    setPinnedMetrics(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const [platformDataMap, setPlatformDataMap] = useState<Record<string, PlatformData>>(() => 
+    getMockPlatformData(dateRange, activeCampaign, comparisonMode, customComparisonType)
+  );
+  const [globalOverview, setGlobalOverview] = useState<GlobalOverviewData>(() => 
+    getGlobalOverviewData(dateRange, activeCampaign, comparisonMode, customComparisonType)
+  );
   const [apiSamples, setApiSamples] = useState<ApiPayloadSample[]>(() => getMockApiPayloads());
 
   useEffect(() => {
-    setPlatformDataMap(getMockPlatformData(dateRange, activeCampaign));
-    setGlobalOverview(getGlobalOverviewData(dateRange, activeCampaign));
-  }, [dateRange, activeCampaign]);
+    setPlatformDataMap(getMockPlatformData(dateRange, activeCampaign, comparisonMode, customComparisonType));
+    setGlobalOverview(getGlobalOverviewData(dateRange, activeCampaign, comparisonMode, customComparisonType));
+  }, [dateRange, activeCampaign, comparisonMode, customComparisonType]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -61,8 +120,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const refreshData = () => {
     setIsRefreshing(true);
     setTimeout(() => {
-      setPlatformDataMap(getMockPlatformData(dateRange, activeCampaign));
-      setGlobalOverview(getGlobalOverviewData(dateRange, activeCampaign));
+      setPlatformDataMap(getMockPlatformData(dateRange, activeCampaign, comparisonMode, customComparisonType));
+      setGlobalOverview(getGlobalOverviewData(dateRange, activeCampaign, comparisonMode, customComparisonType));
       setApiSamples(getMockApiPayloads());
       setIsRefreshing(false);
     }, 600);
@@ -75,12 +134,30 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setActiveView,
         dateRange,
         setDateRange,
+        comparisonMode,
+        setComparisonMode,
+        customComparisonType,
+        setCustomComparisonType,
         activeCampaign,
         setActiveCampaign,
         customStartDate,
         setCustomStartDate,
         customEndDate,
         setCustomEndDate,
+        customCompStartDate,
+        setCustomCompStartDate,
+        customCompEndDate,
+        setCustomCompEndDate,
+        displayValueType,
+        setDisplayValueType,
+        customThresholds,
+        setCustomThresholds,
+        showMilestones,
+        setShowMilestones,
+        isSettingsModalOpen,
+        setIsSettingsModalOpen,
+        pinnedMetrics,
+        togglePinnedMetric,
         isDarkMode,
         toggleDarkMode,
         platformDataMap,

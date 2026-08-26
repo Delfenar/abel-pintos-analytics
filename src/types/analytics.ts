@@ -1,6 +1,12 @@
 export type PlatformId = 'overview' | 'instagram' | 'threads' | 'tiktok' | 'facebook' | 'twitter' | 'youtube' | 'spotify' | 'simulator';
 
-export type DateRangeKey = '7d' | '28d' | '90d' | 'custom';
+export type DateRangeKey = '7d' | '28d' | '90d' | '1y' | 'custom';
+
+export type ComparisonMode = 'wow' | 'mom' | 'yoy';
+
+export type CustomComparisonType = 'previous_period' | 'year_ago' | 'custom_range';
+
+export type DisplayValueType = 'percentage' | 'absolute';
 
 export type CampaignId = 'all' | 'tour30' | 'album' | 'book';
 
@@ -11,35 +17,71 @@ export interface CampaignFilter {
   badge: string;
 }
 
+export interface Milestone {
+  id: string;
+  date: string;
+  title: string;
+  category: string;
+  color: string;
+}
+
+export interface CustomThresholds {
+  positiveThreshold: number; // e.g. 5 for +5%
+  negativeThreshold: number; // e.g. -10 for -10%
+  ignoreNoise: boolean;
+}
+
+export interface ComparisonSettings {
+  comparisonType: CustomComparisonType;
+  customCompStartDate: string;
+  customCompEndDate: string;
+  displayValueType: DisplayValueType;
+  thresholds: CustomThresholds;
+  pinnedMetrics: Record<string, boolean>;
+  showMilestones: boolean;
+}
+
 export interface MetricItem {
   id: string;
   label: string;
   value: number;
-  previousValue: number;
+  previousWeekValue: number;
+  previousMonthValue: number;
+  previousYearValue: number;
+  previousValue?: number;
   unit?: string;
   prefix?: string;
   suffix?: string;
   format?: 'number' | 'percent' | 'currency' | 'duration';
   description?: string;
   sparkline: number[];
+  comparisonSparkline?: number[];
+  isPinned?: boolean;
 }
 
 export interface KPIItem {
   id: string;
   label: string;
   value: number;
-  previousValue: number;
+  previousWeekValue: number;
+  previousMonthValue: number;
+  previousYearValue: number;
+  previousValue?: number;
   unit: string;
   prefix?: string;
   suffix?: string;
   target?: number;
   description: string;
   status: 'excellent' | 'good' | 'average' | 'needs_improvement';
+  isPinned?: boolean;
 }
 
 export interface TimeSeriesPoint {
   date: string;
-  [key: string]: string | number;
+  current: number;
+  comparison: number;
+  milestone?: string;
+  [key: string]: string | number | undefined;
 }
 
 export interface ContentItem {
@@ -89,6 +131,7 @@ export interface GlobalOverviewData {
     followers: number;
   }[];
   multiPlatformTimeSeries: TimeSeriesPoint[];
+  milestones: Milestone[];
 }
 
 export interface ApiPayloadSample {

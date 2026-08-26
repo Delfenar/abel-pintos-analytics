@@ -1,10 +1,16 @@
 import React from 'react';
-import { TrendingUp, TrendingDown, HelpCircle } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Minus, HelpCircle, Pin } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line } from 'recharts';
+import { useDashboard } from '../../context/DashboardContext';
+import { evaluateDeltaWithThresholds } from '../../services/mockDataService';
 
 interface StatCardProps {
+  id?: string;
   label: string;
   value: number | string;
+  previousWeekValue?: number;
+  previousMonthValue?: number;
+  previousYearValue?: number;
   previousValue?: number;
   unit?: string;
   prefix?: string;
@@ -34,7 +40,6 @@ const formatValue = (
     return `${prefix}${val}s${suffix}`;
   }
 
-  // Large number formatting
   if (val >= 1000000) {
     return `${prefix}${(val / 1000000).toFixed(2)}M${suffix}`;
   }
@@ -45,26 +50,56 @@ const formatValue = (
 };
 
 export const StatCard: React.FC<StatCardProps> = ({
+  id,
   label,
   value,
-  previousValue,
+  previousWeekValue,
+  previousMonthValue,
+  previousYearValue,
+  previousValue: fallbackPrev,
   unit,
   prefix = '',
   suffix = '',
   format = 'number',
   description,
   sparkline,
-  brandColor = '#6366F1',
+  brandColor = '#D4AF37',
   status,
 }) => {
-  let percentChange = 0;
-  if (typeof value === 'number' && previousValue && previousValue > 0) {
-    percentChange = ((value - previousValue) / previousValue) * 100;
+  const { 
+    comparisonMode, 
+    customComparisonType, 
+    displayValueType, 
+    customThresholds,
+    pinnedMetrics,
+    togglePinnedMetric
+  } = useDashboard();
+
+  let prevVal: number | undefined = fallbackPrev;
+  let compLabel = 'vs. periodo anterior';
+
+  if (customComparisonType === 'year_ago') {
+    prevVal = previousYearValue ?? fallbackPrev;
+    compLabel = 'vs. año anterior (YoY)';
+  } else if (comparisonMode === 'wow' && previousWeekValue !== undefined) {
+    prevVal = previousWeekValue;
+    compLabel = 'vs. semana anterior (WoW)';
+  } else if (comparisonMode === 'mom' && previousMonthValue !== undefined) {
+    prevVal = previousMonthValue;
+    compLabel = 'vs. mes anterior (MoM)';
+  } else if (comparisonMode === 'yoy' && previousYearValue !== undefined) {
+    prevVal = previousYearValue;
+    compLabel = 'vs. año anterior (YoY)';
+  } else if (previousMonthValue !== undefined) {
+    prevVal = previousMonthValue;
   }
 
-  const isPositive = percentChange >= 0;
+  const numVal = typeof value === 'number' ? value : 0;
+  const numPrev = prevVal || 0;
 
-  // Convert sparkline array to recharts structure
+  const deltaEval = evaluateDeltaWithThresholds(numVal, numPrev, customThresholds);
+  const isPinned = id ? !!pinnedMetrics[id] : false;
+
   const sparklineData = sparkline ? sparkline.map((val, idx) => ({ idx, val })) : [];
 
   const getStatusBadge = () => {
@@ -89,7 +124,9 @@ export const StatCard: React.FC<StatCardProps> = ({
   };
 
   return (
-    <div className="glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:border-slate-600/50 hover:shadow-lg hover:shadow-indigo-500/5 group">
+    <div className={`glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 group ${
+      isPinned ? 'border-gold-400/60 bg-gold-400/5 shadow-lg shadow-gold-500/5' : 'hover:border-gold-400/40'
+    }`}>
       {/* Top accent line */}
       <div 
         className="absolute top-0 left-0 right-0 h-1 opacity-70 transition-all group-hover:opacity-100" 
@@ -105,39 +142,61 @@ export const StatCard: React.FC<StatCardProps> = ({
             </span>
           )}
         </span>
-        {getStatusBadge()}
+        <div className="flex items-center gap-1.5">
+          {id && (
+            <button
+              onClick={() => togglePinnedMetric(id)}
+              className={`p-1 rounded-md transition-colors ${
+                isPinned ? 'text-gold-400 bg-gold-400/10' : 'text-slate-600 hover:text-slate-300'
+              }`}
+              title={isPinned ? 'Fijado en prioridad' : 'Fijar KPI en panel'}
+            >
+              <Pin className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {getStatusBadge()}
+        </div>
       </div>
 
       <div className="flex items-baseline justify-between gap-4 my-1">
-        <div className="text-2xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">
+        <div className="text-2xl font-black text-slate-900 dark:text-slate-50 tracking-tight">
           {formatValue(value, format, prefix, suffix)}
           {unit && format !== 'percent' && format !== 'currency' && (
             <span className="text-sm font-medium text-slate-400 ml-1">{unit}</span>
           )}
         </div>
 
-        {previousValue !== undefined && (
+        {prevVal !== undefined && (
           <div
             className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg ${
-              isPositive
-                ? 'bg-emerald-500/10 text-emerald-400 dark:bg-emerald-500/20 dark:text-emerald-300'
-                : 'bg-rose-500/10 text-rose-400 dark:bg-rose-500/20 dark:text-rose-300'
+              deltaEval.status === 'positive'
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                : deltaEval.status === 'negative'
+                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
             }`}
           >
-            {isPositive ? (
-              <TrendingUp className="w-3.5 h-3.5 stroke-[2.5]" />
-            ) : (
-              <TrendingDown className="w-3.5 h-3.5 stroke-[2.5]" />
-            )}
-            <span>{Math.abs(percentChange).toFixed(1)}%</span>
+            {deltaEval.status === 'positive' && <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />}
+            {deltaEval.status === 'negative' && <ArrowDownRight className="w-3.5 h-3.5 stroke-[2.5]" />}
+            {deltaEval.status === 'neutral' && <Minus className="w-3.5 h-3.5 stroke-[2.5]" />}
+            
+            <span>
+              {displayValueType === 'absolute'
+                ? `${deltaEval.absolute >= 0 ? '+' : ''}${formatValue(deltaEval.absolute, format, prefix, suffix)}`
+                : `${deltaEval.percent >= 0 ? '+' : ''}${deltaEval.percent.toFixed(1)}%`}
+            </span>
           </div>
         )}
       </div>
 
-      {/* Sparkline & Subtitle */}
+      {/* Secondary Context & Sparkline */}
       <div className="mt-3 pt-2 border-t border-slate-800/40 dark:border-slate-800/60 flex items-center justify-between">
         <span className="text-[11px] text-slate-400 dark:text-slate-400">
-          vs período anterior
+          {prevVal !== undefined ? (
+            <>vs. <strong className="text-slate-300">{formatValue(prevVal, format, prefix, suffix)}</strong> ({comparisonMode.toUpperCase()})</>
+          ) : (
+            compLabel
+          )}
         </span>
 
         {sparklineData.length > 0 && (

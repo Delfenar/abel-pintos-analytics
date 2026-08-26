@@ -6,7 +6,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import { Youtube, Play, Clock, UserPlus, Image, Award } from 'lucide-react';
 
 export const YouTubeView: React.FC = () => {
-  const { platformDataMap } = useDashboard();
+  const { platformDataMap, comparisonMode } = useDashboard();
   const data = platformDataMap.youtube;
 
   if (!data) return null;
@@ -35,7 +35,9 @@ export const YouTubeView: React.FC = () => {
         <StatCard
           label={data.kpis.thumbnailCtrKpi.label}
           value={data.kpis.thumbnailCtrKpi.value}
-          previousValue={data.kpis.thumbnailCtrKpi.previousValue}
+          previousWeekValue={data.kpis.thumbnailCtrKpi.previousWeekValue}
+          previousMonthValue={data.kpis.thumbnailCtrKpi.previousMonthValue}
+          previousYearValue={data.kpis.thumbnailCtrKpi.previousYearValue}
           unit="%"
           format="percent"
           brandColor="#FF0000"
@@ -45,7 +47,9 @@ export const YouTubeView: React.FC = () => {
         <StatCard
           label={data.kpis.retentionKpi.label}
           value={data.kpis.retentionKpi.value}
-          previousValue={data.kpis.retentionKpi.previousValue}
+          previousWeekValue={data.kpis.retentionKpi.previousWeekValue}
+          previousMonthValue={data.kpis.retentionKpi.previousMonthValue}
+          previousYearValue={data.kpis.retentionKpi.previousYearValue}
           unit="%"
           format="percent"
           brandColor="#D4AF37"
@@ -55,7 +59,9 @@ export const YouTubeView: React.FC = () => {
         <StatCard
           label={data.kpis.subGrowthKpi.label}
           value={data.kpis.subGrowthKpi.value}
-          previousValue={data.kpis.subGrowthKpi.previousValue}
+          previousWeekValue={data.kpis.subGrowthKpi.previousWeekValue}
+          previousMonthValue={data.kpis.subGrowthKpi.previousMonthValue}
+          previousYearValue={data.kpis.subGrowthKpi.previousYearValue}
           unit="%"
           format="percent"
           brandColor="#C5A059"
@@ -69,14 +75,18 @@ export const YouTubeView: React.FC = () => {
         <StatCard
           label={data.metrics.views.label}
           value={data.metrics.views.value}
-          previousValue={data.metrics.views.previousValue}
+          previousWeekValue={data.metrics.views.previousWeekValue}
+          previousMonthValue={data.metrics.views.previousMonthValue}
+          previousYearValue={data.metrics.views.previousYearValue}
           sparkline={data.metrics.views.sparkline}
           brandColor="#FF0000"
         />
         <StatCard
           label={data.metrics.watchTime.label}
           value={data.metrics.watchTime.value}
-          previousValue={data.metrics.watchTime.previousValue}
+          previousWeekValue={data.metrics.watchTime.previousWeekValue}
+          previousMonthValue={data.metrics.watchTime.previousMonthValue}
+          previousYearValue={data.metrics.watchTime.previousYearValue}
           unit="hrs"
           sparkline={data.metrics.watchTime.sparkline}
           brandColor="#D4AF37"
@@ -84,14 +94,18 @@ export const YouTubeView: React.FC = () => {
         <StatCard
           label={data.metrics.netSubscribers.label}
           value={data.metrics.netSubscribers.value}
-          previousValue={data.metrics.netSubscribers.previousValue}
+          previousWeekValue={data.metrics.netSubscribers.previousWeekValue}
+          previousMonthValue={data.metrics.netSubscribers.previousMonthValue}
+          previousYearValue={data.metrics.netSubscribers.previousYearValue}
           sparkline={data.metrics.netSubscribers.sparkline}
           brandColor="#B91C1C"
         />
         <StatCard
           label={data.metrics.thumbnailCtr.label}
           value={data.metrics.thumbnailCtr.value}
-          previousValue={data.metrics.thumbnailCtr.previousValue}
+          previousWeekValue={data.metrics.thumbnailCtr.previousWeekValue}
+          previousMonthValue={data.metrics.thumbnailCtr.previousMonthValue}
+          previousYearValue={data.metrics.thumbnailCtr.previousYearValue}
           unit="%"
           format="percent"
           sparkline={data.metrics.thumbnailCtr.sparkline}
@@ -100,7 +114,9 @@ export const YouTubeView: React.FC = () => {
         <StatCard
           label={data.metrics.retention.label}
           value={data.metrics.retention.value}
-          previousValue={data.metrics.retention.previousValue}
+          previousWeekValue={data.metrics.retention.previousWeekValue}
+          previousMonthValue={data.metrics.retention.previousMonthValue}
+          previousYearValue={data.metrics.retention.previousYearValue}
           unit="%"
           format="percent"
           sparkline={data.metrics.retention.sparkline}
@@ -113,7 +129,7 @@ export const YouTubeView: React.FC = () => {
         <div className="glass-panel p-6 rounded-2xl lg:col-span-2">
           <h3 className="text-base font-bold text-slate-100 mb-4 flex items-center gap-2">
             <Play className="w-4 h-4 text-red-500" />
-            Vistas y Horas de Reproducción en YouTube
+            Vistas y Horas de Reproducción en YouTube ({comparisonMode.toUpperCase()})
           </h3>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -128,7 +144,8 @@ export const YouTubeView: React.FC = () => {
                 <XAxis dataKey="date" stroke="#94A3B8" fontSize={11} />
                 <YAxis stroke="#94A3B8" fontSize={11} />
                 <Tooltip contentStyle={{ backgroundColor: '#0F172A', borderColor: '#FF0000', borderRadius: '0.75rem', fontSize: '12px' }} />
-                <Area type="monotone" dataKey="Views" stroke="#FF0000" strokeWidth={2.5} fill="url(#ytViewsGrad)" />
+                <Area type="monotone" dataKey="current" name="Vistas Actuales" stroke="#FF0000" strokeWidth={2.5} fill="url(#ytViewsGrad)" />
+                <Area type="monotone" dataKey="comparison" name={`Vistas Comparadas (${comparisonMode.toUpperCase()})`} stroke="#94A3B8" strokeWidth={2} strokeDasharray="5 5" fill="transparent" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

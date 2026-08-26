@@ -6,7 +6,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import { Music, Radio, Bookmark, ListPlus, UserCheck, HeadphoneIcon, Disc, Flame } from 'lucide-react';
 
 export const SpotifyView: React.FC = () => {
-  const { platformDataMap } = useDashboard();
+  const { platformDataMap, comparisonMode } = useDashboard();
   const data = platformDataMap.spotify;
 
   if (!data) return null;
@@ -35,7 +35,9 @@ export const SpotifyView: React.FC = () => {
         <StatCard
           label={data.kpis.listenerToFollower.label}
           value={data.kpis.listenerToFollower.value}
-          previousValue={data.kpis.listenerToFollower.previousValue}
+          previousWeekValue={data.kpis.listenerToFollower.previousWeekValue}
+          previousMonthValue={data.kpis.listenerToFollower.previousMonthValue}
+          previousYearValue={data.kpis.listenerToFollower.previousYearValue}
           unit="%"
           format="percent"
           brandColor="#1DB954"
@@ -45,7 +47,9 @@ export const SpotifyView: React.FC = () => {
         <StatCard
           label={data.kpis.savesToStream.label}
           value={data.kpis.savesToStream.value}
-          previousValue={data.kpis.savesToStream.previousValue}
+          previousWeekValue={data.kpis.savesToStream.previousWeekValue}
+          previousMonthValue={data.kpis.savesToStream.previousMonthValue}
+          previousYearValue={data.kpis.savesToStream.previousYearValue}
           unit="%"
           format="percent"
           brandColor="#D4AF37"
@@ -55,7 +59,9 @@ export const SpotifyView: React.FC = () => {
         <StatCard
           label={data.kpis.streamsPerListener.label}
           value={data.kpis.streamsPerListener.value}
-          previousValue={data.kpis.streamsPerListener.previousValue}
+          previousWeekValue={data.kpis.streamsPerListener.previousWeekValue}
+          previousMonthValue={data.kpis.streamsPerListener.previousMonthValue}
+          previousYearValue={data.kpis.streamsPerListener.previousYearValue}
           unit="streams"
           brandColor="#C5A059"
           status={data.kpis.streamsPerListener.status}
@@ -68,35 +74,45 @@ export const SpotifyView: React.FC = () => {
         <StatCard
           label={data.metrics.listeners.label}
           value={data.metrics.listeners.value}
-          previousValue={data.metrics.listeners.previousValue}
+          previousWeekValue={data.metrics.listeners.previousWeekValue}
+          previousMonthValue={data.metrics.listeners.previousMonthValue}
+          previousYearValue={data.metrics.listeners.previousYearValue}
           sparkline={data.metrics.listeners.sparkline}
           brandColor="#1DB954"
         />
         <StatCard
           label={data.metrics.streams.label}
           value={data.metrics.streams.value}
-          previousValue={data.metrics.streams.previousValue}
+          previousWeekValue={data.metrics.streams.previousWeekValue}
+          previousMonthValue={data.metrics.streams.previousMonthValue}
+          previousYearValue={data.metrics.streams.previousYearValue}
           sparkline={data.metrics.streams.sparkline}
           brandColor="#D4AF37"
         />
         <StatCard
           label={data.metrics.librarySaves.label}
           value={data.metrics.librarySaves.value}
-          previousValue={data.metrics.librarySaves.previousValue}
+          previousWeekValue={data.metrics.librarySaves.previousWeekValue}
+          previousMonthValue={data.metrics.librarySaves.previousMonthValue}
+          previousYearValue={data.metrics.librarySaves.previousYearValue}
           sparkline={data.metrics.librarySaves.sparkline}
           brandColor="#1AA34A"
         />
         <StatCard
           label={data.metrics.playlistAdds.label}
           value={data.metrics.playlistAdds.value}
-          previousValue={data.metrics.playlistAdds.previousValue}
+          previousWeekValue={data.metrics.playlistAdds.previousWeekValue}
+          previousMonthValue={data.metrics.playlistAdds.previousMonthValue}
+          previousYearValue={data.metrics.playlistAdds.previousYearValue}
           sparkline={data.metrics.playlistAdds.sparkline}
           brandColor="#C5A059"
         />
         <StatCard
           label={data.metrics.followers.label}
           value={data.metrics.followers.value}
-          previousValue={data.metrics.followers.previousValue}
+          previousWeekValue={data.metrics.followers.previousWeekValue}
+          previousMonthValue={data.metrics.followers.previousMonthValue}
+          previousYearValue={data.metrics.followers.previousYearValue}
           sparkline={data.metrics.followers.sparkline}
           brandColor="#A7F3D0"
         />
@@ -107,7 +123,7 @@ export const SpotifyView: React.FC = () => {
         <div className="glass-panel p-6 rounded-2xl lg:col-span-2">
           <h3 className="text-base font-bold text-slate-100 mb-4 flex items-center gap-2">
             <Radio className="w-4 h-4 text-emerald-400" />
-            Evolución de Streams Diarios en Spotify (Abel Pintos)
+            Evolución de Streams Diarios en Spotify ({comparisonMode.toUpperCase()})
           </h3>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -122,7 +138,8 @@ export const SpotifyView: React.FC = () => {
                 <XAxis dataKey="date" stroke="#94A3B8" fontSize={11} />
                 <YAxis stroke="#94A3B8" fontSize={11} />
                 <Tooltip contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1DB954', borderRadius: '0.75rem', fontSize: '12px' }} />
-                <Area type="monotone" dataKey="Streams" stroke="#1DB954" strokeWidth={2.5} fill="url(#spStreamsGrad)" />
+                <Area type="monotone" dataKey="current" name="Periodo Actual" stroke="#1DB954" strokeWidth={2.5} fill="url(#spStreamsGrad)" />
+                <Area type="monotone" dataKey="comparison" name={`Comparado (${comparisonMode.toUpperCase()})`} stroke="#94A3B8" strokeWidth={2} strokeDasharray="5 5" fill="transparent" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -141,17 +158,6 @@ export const SpotifyView: React.FC = () => {
                 <Tooltip contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1DB954', borderRadius: '0.75rem', fontSize: '12px' }} />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-          <div className="mt-2 space-y-1.5 text-xs">
-            {data.contentDistribution.map((item) => (
-              <div key={item.name} className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-slate-300">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  {item.name}
-                </span>
-                <span className="font-bold text-slate-100">{item.value}%</span>
-              </div>
-            ))}
           </div>
         </div>
       </div>
