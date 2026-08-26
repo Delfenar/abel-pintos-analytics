@@ -1319,3 +1319,154 @@ export const getMockApiPayloads = (): ApiPayloadSample[] => [
     }
   }
 ];
+
+export const getComparativePeriodLabel = (
+  range: DateRangeKey,
+  mode: ComparisonMode,
+  customType: CustomComparisonType = 'previous_period',
+  customStart?: string,
+  customEnd?: string,
+  customCompStart?: string,
+  customCompEnd?: string
+): { currentLabel: string; comparisonLabel: string; fullSubtitle: string } => {
+  const today = new Date(2026, 7, 26); // Aug 26, 2026
+
+  const formatDateShort = (d: Date) => {
+    return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+  };
+
+  const formatDateWithYear = (d: Date) => {
+    return `${d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}, ${d.getFullYear()}`;
+  };
+
+  if (range === 'custom' && customStart && customEnd) {
+    const dStart = new Date(customStart);
+    const dEnd = new Date(customEnd);
+    const diffDays = Math.max(1, Math.round((dEnd.getTime() - dStart.getTime()) / (86400 * 1000)));
+
+    const curLabel = `${formatDateShort(dStart)} – ${formatDateWithYear(dEnd)}`;
+
+    let compLabel = '';
+    if (customType === 'custom_range' && customCompStart && customCompEnd) {
+      const cStart = new Date(customCompStart);
+      const cEnd = new Date(customCompEnd);
+      compLabel = `${formatDateShort(cStart)} – ${formatDateWithYear(cEnd)}`;
+    } else if (customType === 'year_ago') {
+      const cStart = new Date(dStart);
+      cStart.setFullYear(cStart.getFullYear() - 1);
+      const cEnd = new Date(dEnd);
+      cEnd.setFullYear(cEnd.getFullYear() - 1);
+      compLabel = `${formatDateShort(cStart)} – ${formatDateWithYear(cEnd)}`;
+    } else {
+      const cEnd = new Date(dStart);
+      cEnd.setDate(cEnd.getDate() - 1);
+      const cStart = new Date(cEnd);
+      cStart.setDate(cStart.getDate() - diffDays);
+      compLabel = `${formatDateShort(cStart)} – ${formatDateWithYear(cEnd)}`;
+    }
+
+    return {
+      currentLabel: curLabel,
+      comparisonLabel: compLabel,
+      fullSubtitle: `${curLabel} vs. ${compLabel}`
+    };
+  }
+
+  if (customType === 'year_ago' || mode === 'yoy') {
+    const curEnd = today;
+    const curStart = new Date(today);
+    curStart.setDate(curStart.getDate() - (range === '7d' ? 6 : range === '28d' ? 27 : range === '90d' ? 89 : 365));
+
+    const prevEnd = new Date(curEnd);
+    prevEnd.setFullYear(prevEnd.getFullYear() - 1);
+    const prevStart = new Date(curStart);
+    prevStart.setFullYear(prevStart.getFullYear() - 1);
+
+    const curLabel = `Agosto 2026 (${formatDateShort(curStart)} – ${formatDateWithYear(curEnd)})`;
+    const compLabel = `Agosto 2025 (${formatDateShort(prevStart)} – ${formatDateWithYear(prevEnd)})`;
+
+    return {
+      currentLabel: curLabel,
+      comparisonLabel: compLabel,
+      fullSubtitle: `${curLabel} vs. ${compLabel}`
+    };
+  }
+
+  if (range === '7d' || mode === 'wow') {
+    const curEnd = today;
+    const curStart = new Date(today);
+    curStart.setDate(curStart.getDate() - 6);
+
+    const prevEnd = new Date(curStart);
+    prevEnd.setDate(prevEnd.getDate() - 1);
+    const prevStart = new Date(prevEnd);
+    prevStart.setDate(prevStart.getDate() - 6);
+
+    const curLabel = `Últimos 7 días (${formatDateShort(curStart)} – ${formatDateWithYear(curEnd)})`;
+    const compLabel = `Semana anterior (${formatDateShort(prevStart)} – ${formatDateWithYear(prevEnd)})`;
+
+    return {
+      currentLabel: curLabel,
+      comparisonLabel: compLabel,
+      fullSubtitle: `${curLabel} vs. ${compLabel}`
+    };
+  }
+
+  if (range === '28d' || mode === 'mom') {
+    const curEnd = today;
+    const curStart = new Date(today);
+    curStart.setDate(curStart.getDate() - 27);
+
+    const prevEnd = new Date(curStart);
+    prevEnd.setDate(prevEnd.getDate() - 1);
+    const prevStart = new Date(prevEnd);
+    prevStart.setDate(prevStart.getDate() - 27);
+
+    const curLabel = `Agosto 2026 (${formatDateShort(curStart)} – ${formatDateWithYear(curEnd)})`;
+    const compLabel = `Julio 2026 (${formatDateShort(prevStart)} – ${formatDateWithYear(prevEnd)})`;
+
+    return {
+      currentLabel: curLabel,
+      comparisonLabel: compLabel,
+      fullSubtitle: `${curLabel} vs. ${compLabel}`
+    };
+  }
+
+  if (range === '90d') {
+    const curEnd = today;
+    const curStart = new Date(today);
+    curStart.setDate(curStart.getDate() - 89);
+
+    const prevEnd = new Date(curStart);
+    prevEnd.setDate(prevEnd.getDate() - 1);
+    const prevStart = new Date(prevEnd);
+    prevStart.setDate(prevStart.getDate() - 89);
+
+    const curLabel = `Últimos 90 días (${formatDateShort(curStart)} – ${formatDateWithYear(curEnd)})`;
+    const compLabel = `Trimestre anterior (${formatDateShort(prevStart)} – ${formatDateWithYear(prevEnd)})`;
+
+    return {
+      currentLabel: curLabel,
+      comparisonLabel: compLabel,
+      fullSubtitle: `${curLabel} vs. ${compLabel}`
+    };
+  }
+
+  const curEnd = today;
+  const curStart = new Date(today);
+  curStart.setFullYear(curStart.getFullYear() - 1);
+
+  const prevEnd = new Date(curStart);
+  const prevStart = new Date(prevEnd);
+  prevStart.setFullYear(prevStart.getFullYear() - 1);
+
+  const curLabel = `Último Año (${formatDateWithYear(curStart)} – ${formatDateWithYear(curEnd)})`;
+  const compLabel = `Año anterior (${formatDateWithYear(prevStart)} – ${formatDateWithYear(prevEnd)})`;
+
+  return {
+    currentLabel: curLabel,
+    comparisonLabel: compLabel,
+    fullSubtitle: `${curLabel} vs. ${compLabel}`
+  };
+};
+

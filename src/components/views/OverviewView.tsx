@@ -1,4 +1,4 @@
-import React from 'react';
+import { ComparativeHeaderBanner } from '../ui/ComparativeHeaderBanner';
 import { useDashboard } from '../../context/DashboardContext';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
@@ -173,6 +173,9 @@ export const OverviewView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Dynamic Comparative Header Banner */}
+      <ComparativeHeaderBanner />
 
       {/* Global Stat Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
