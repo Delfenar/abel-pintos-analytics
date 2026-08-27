@@ -179,7 +179,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     
     if (success) {
       setToast({
-        text: '¡Datos guardados con éxito en la hoja maestra!',
+        text: '¡Métricas sincronizadas correctamente en la hoja maestra!',
         type: 'success'
       });
     } else {

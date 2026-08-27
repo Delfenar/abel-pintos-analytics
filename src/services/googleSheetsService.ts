@@ -1,8 +1,8 @@
 import { GlobalOverviewData, PlatformData, CampaignId, DateRangeKey, CampaignFilter } from '../types/analytics';
 
-export const GOOGLE_SHEETS_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzvs1Dp6NiVcAEoQVDFIlY-9ON08PLXUnXhXuAV4iiJSISLbW1boMxSZRQCc4vo_0pp/exec';
+export const GOOGLE_SHEETS_WEBHOOK_URL_V2 = 'https://script.google.com/macros/s/AKfycbwBHyzYzCpYlk6Moy_Yr6GfF3akREPpBKEZxuVlI88ujJAB9y5sBmu8FjdRGw1w7mit/exec';
 
-export interface GoogleSheetsRow {
+export interface GoogleSheetsRowV2 {
   fecha: string;
   anio: number;
   mes: string;
@@ -12,7 +12,6 @@ export interface GoogleSheetsRow {
   valorActual: number;
   unidad: string;
   valorAnterior: number;
-  variacionPorcentual: string;
   estadoKpi: string;
 }
 
@@ -31,7 +30,7 @@ export const sendMetricsToGoogleSheets = async (
     const currentCampaign = campaigns.find(c => c.id === activeCampaign);
     const campaniaLabel = currentCampaign ? currentCampaign.label : (activeCampaign === 'all' ? 'General' : activeCampaign);
 
-    const rows: GoogleSheetsRow[] = [];
+    const rows: GoogleSheetsRowV2[] = [];
 
     const platformNameMap: Record<string, string> = {
       spotify: 'Spotify',
@@ -43,7 +42,7 @@ export const sendMetricsToGoogleSheets = async (
       threads: 'Threads'
     };
 
-    // Iterate through all platforms and compile metric rows
+    // Iterate through all platforms and compile metric rows (EXACT 10 KEYS, NO variacionPorcentual)
     Object.entries(platformDataMap).forEach(([platKey, platData]) => {
       const platName = platformNameMap[platKey] || platData.name;
 
@@ -52,14 +51,9 @@ export const sendMetricsToGoogleSheets = async (
         const valCur = Number(metric.value) || 0;
         const valPrev = Number(metric.previousMonthValue ?? metric.previousWeekValue ?? metric.previousValue) || 0;
         
-        let variacionPorcentual = 'N/A';
         let diff = 0;
-
         if (valPrev > 0) {
           diff = ((valCur - valPrev) / valPrev) * 100;
-          variacionPorcentual = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
-        } else {
-          variacionPorcentual = 'N/A';
         }
 
         const estadoKpi = valPrev > 0 ? (diff >= 0 ? 'Superado' : 'En progreso') : 'Neutro';
@@ -81,7 +75,6 @@ export const sendMetricsToGoogleSheets = async (
           valorActual: Number(valCur),
           unidad: unitStr,
           valorAnterior: Number(valPrev),
-          variacionPorcentual: variacionPorcentual,
           estadoKpi: estadoKpi
         });
       });
@@ -91,14 +84,9 @@ export const sendMetricsToGoogleSheets = async (
         const valCur = Number(kpi.value) || 0;
         const valPrev = Number(kpi.previousMonthValue ?? kpi.previousWeekValue ?? kpi.previousValue) || 0;
         
-        let variacionPorcentual = 'N/A';
         let diff = 0;
-
         if (valPrev > 0) {
           diff = ((valCur - valPrev) / valPrev) * 100;
-          variacionPorcentual = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
-        } else {
-          variacionPorcentual = 'N/A';
         }
 
         const estadoKpi = valPrev > 0 ? (diff >= 0 ? 'Superado' : 'En progreso') : (kpi.status === 'excellent' ? 'Superado' : 'En progreso');
@@ -113,16 +101,15 @@ export const sendMetricsToGoogleSheets = async (
           valorActual: Number(valCur),
           unidad: kpi.unit || '%',
           valorAnterior: Number(valPrev),
-          variacionPorcentual: variacionPorcentual,
           estadoKpi: estadoKpi
         });
       });
     });
 
-    // 3. Print final array payload in browser console before fetch
-    console.log('[GoogleSheetsSync] Arreglo final de métricas a enviar a Google Sheets:', rows);
+    // Console verification log
+    console.log('[GoogleSheetsSyncV2] Payload final v2 enviado a Webhook Google Apps Script (10 claves exactas, sin variacionPorcentual):', rows);
 
-    await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+    await fetch(GOOGLE_SHEETS_WEBHOOK_URL_V2, {
       method: 'POST',
       mode: 'no-cors',
       headers: {
@@ -133,7 +120,7 @@ export const sendMetricsToGoogleSheets = async (
 
     return true;
   } catch (error) {
-    console.error('Error sending metric rows to Google Sheets Webhook:', error);
+    console.error('Error sending metric rows to Google Sheets Webhook v2:', error);
     return false;
   }
 };
