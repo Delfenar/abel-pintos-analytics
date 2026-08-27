@@ -8,13 +8,24 @@ export type CustomComparisonType = 'previous_period' | 'year_ago' | 'custom_rang
 
 export type DisplayValueType = 'percentage' | 'absolute';
 
-export type CampaignId = 'all' | 'tour30' | 'album' | 'book';
+export type CampaignId = string;
+
+export type CampaignEventType = 'tour' | 'release' | 'merch' | 'press';
 
 export interface CampaignFilter {
   id: CampaignId;
   label: string;
   description: string;
   badge: string;
+  type: CampaignEventType;
+  startDate: string;
+  endDate: string;
+  year: number;
+  city?: string;
+  targetStreams?: number;
+  targetTickets?: number;
+  targetReach?: number;
+  isUserCreated?: boolean;
 }
 
 export interface Milestone {

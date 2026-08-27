@@ -7,11 +7,18 @@ import {
   DisplayValueType,
   CustomThresholds,
   CampaignId, 
+  CampaignFilter,
   PlatformData, 
   GlobalOverviewData, 
   ApiPayloadSample 
 } from '../types/analytics';
-import { getMockPlatformData, getGlobalOverviewData, getMockApiPayloads } from '../services/mockDataService';
+import { 
+  getMockPlatformData, 
+  getGlobalOverviewData, 
+  getMockApiPayloads,
+  loadCampaignsFromStorage,
+  saveCampaignsToStorage
+} from '../services/mockDataService';
 
 interface DashboardContextType {
   activeView: PlatformId;
@@ -24,6 +31,12 @@ interface DashboardContextType {
   setCustomComparisonType: (type: CustomComparisonType) => void;
   activeCampaign: CampaignId;
   setActiveCampaign: (campaign: CampaignId) => void;
+  campaigns: CampaignFilter[];
+  addCampaign: (newCamp: CampaignFilter) => void;
+  campaignSearchQuery: string;
+  setCampaignSearchQuery: (query: string) => void;
+  isCampaignModalOpen: boolean;
+  setIsCampaignModalOpen: (open: boolean) => void;
   customStartDate: string;
   setCustomStartDate: (date: string) => void;
   customEndDate: string;
@@ -61,7 +74,11 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [comparisonMode, setComparisonMode] = useState<ComparisonMode>('mom');
   const [customComparisonType, setCustomComparisonType] = useState<CustomComparisonType>('previous_period');
   const [activeCampaign, setActiveCampaign] = useState<CampaignId>('all');
-  
+
+  const [campaigns, setCampaigns] = useState<CampaignFilter[]>(() => loadCampaignsFromStorage());
+  const [campaignSearchQuery, setCampaignSearchQuery] = useState<string>('');
+  const [isCampaignModalOpen, setIsCampaignModalOpen] = useState<boolean>(false);
+
   const [customStartDate, setCustomStartDate] = useState<string>('2026-08-01');
   const [customEndDate, setCustomEndDate] = useState<string>('2026-08-26');
   const [customCompStartDate, setCustomCompStartDate] = useState<string>('2026-07-05');
@@ -86,6 +103,26 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const addCampaign = (newCamp: CampaignFilter) => {
+    setCampaigns(prev => {
+      const updated = [...prev, newCamp];
+      saveCampaignsToStorage(updated);
+      return updated;
+    });
+  };
+
+  // Automatic date alignment when selecting a specific campaign
+  useEffect(() => {
+    if (activeCampaign && activeCampaign !== 'all') {
+      const selected = campaigns.find(c => c.id === activeCampaign);
+      if (selected && selected.startDate && selected.endDate) {
+        setDateRange('custom');
+        setCustomStartDate(selected.startDate);
+        setCustomEndDate(selected.endDate);
+      }
+    }
+  }, [activeCampaign, campaigns]);
 
   const togglePinnedMetric = (id: string) => {
     setPinnedMetrics(prev => ({ ...prev, [id]: !prev[id] }));
@@ -140,6 +177,12 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setCustomComparisonType,
         activeCampaign,
         setActiveCampaign,
+        campaigns,
+        addCampaign,
+        campaignSearchQuery,
+        setCampaignSearchQuery,
+        isCampaignModalOpen,
+        setIsCampaignModalOpen,
         customStartDate,
         setCustomStartDate,
         customEndDate,

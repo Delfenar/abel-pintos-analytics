@@ -13,12 +13,87 @@ import {
   ApiPayloadSample 
 } from '../types/analytics';
 
-export const CAMPAIGNS: CampaignFilter[] = [
-  { id: 'all', label: 'Todas las Campañas', description: 'Visión consolidada de todo el ecosistema digital', badge: 'GLOBAL' },
-  { id: 'tour30', label: 'Gira 30 Aniversario / Shows BA & Rosario', description: 'Promoción de conciertos masivos y venta de tickets', badge: 'SHOWS' },
-  { id: 'album', label: 'Lanzamiento de Álbum & Singles', description: 'Promoción de nuevos sencillos y reproducción en streaming', badge: 'MÚSICA' },
-  { id: 'book', label: 'Libro Conmemorativo', description: 'Lanzamiento editorial conmemorativo y firma de ejemplares', badge: 'LIBRO' },
+export const DEFAULT_CAMPAIGNS: CampaignFilter[] = [
+  { 
+    id: 'all', 
+    label: 'Todas las Campañas', 
+    description: 'Visión consolidada de todo el ecosistema digital', 
+    badge: 'GLOBAL',
+    type: 'press',
+    startDate: '2026-08-01',
+    endDate: '2026-08-26',
+    year: 2026,
+    city: 'Todas',
+    targetReach: 18500000
+  },
+  { 
+    id: 'tour30', 
+    label: 'Gira 30 Aniversario / Shows BA & Rosario', 
+    description: 'Promoción de conciertos masivos y venta de tickets', 
+    badge: 'SHOWS',
+    type: 'tour',
+    startDate: '2026-08-10',
+    endDate: '2026-08-25',
+    year: 2026,
+    city: 'Buenos Aires & Rosario',
+    targetTickets: 120000,
+    targetReach: 8500000
+  },
+  { 
+    id: 'album', 
+    label: 'Lanzamiento de Álbum & Singles', 
+    description: 'Promoción de nuevos sencillos y reproducción en streaming', 
+    badge: 'MÚSICA',
+    type: 'release',
+    startDate: '2026-08-05',
+    endDate: '2026-08-20',
+    year: 2026,
+    city: 'Internacional',
+    targetStreams: 25000000,
+    targetReach: 12000000
+  },
+  { 
+    id: 'book', 
+    label: 'Libro Conmemorativo', 
+    description: 'Lanzamiento editorial conmemorativo y firma de ejemplares', 
+    badge: 'LIBRO',
+    type: 'merch',
+    startDate: '2026-08-15',
+    endDate: '2026-08-24',
+    year: 2026,
+    city: 'Buenos Aires',
+    targetReach: 3500000
+  },
 ];
+
+const LOCAL_STORAGE_KEY = 'panter_look_custom_campaigns';
+
+export const loadCampaignsFromStorage = (): CampaignFilter[] => {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (raw) {
+      const stored: CampaignFilter[] = JSON.parse(raw);
+      // Merge defaults with stored custom campaigns
+      const existingIds = new Set(DEFAULT_CAMPAIGNS.map(c => c.id));
+      const customOnly = stored.filter(c => !existingIds.has(c.id));
+      return [...DEFAULT_CAMPAIGNS, ...customOnly];
+    }
+  } catch (e) {
+    console.error('Error loading custom campaigns from localStorage', e);
+  }
+  return DEFAULT_CAMPAIGNS;
+};
+
+export const saveCampaignsToStorage = (campaigns: CampaignFilter[]) => {
+  try {
+    const customOnly = campaigns.filter(c => c.isUserCreated || !DEFAULT_CAMPAIGNS.some(d => d.id === c.id));
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(customOnly));
+  } catch (e) {
+    console.error('Error saving custom campaigns to localStorage', e);
+  }
+};
+
+export const CAMPAIGNS = DEFAULT_CAMPAIGNS;
 
 export const ABEL_PINTOS_MILESTONES: Milestone[] = [
   { id: 'm-1', date: '12 Ago', title: 'Lanzamiento Single Oncemil Remastered', category: 'Música', color: '#D4AF37' },
@@ -44,7 +119,7 @@ const getCampaignMultiplier = (campaign: CampaignId): number => {
     case 'tour30': return 0.48;
     case 'album': return 0.35;
     case 'book': return 0.17;
-    default: return 1.0;
+    default: return 0.42;
   }
 };
 
@@ -129,7 +204,7 @@ export const getMockPlatformData = (
   const days = getDaysCount(range);
   const dateLabels = generateDates(days);
 
-  // --- 1. SPOTIFY (Abel Pintos — 4.42M Oyentes Mensuales, 3.84M Seguidores) ---
+  // --- 1. SPOTIFY ---
   const spListeners = Math.round(4420000 * (campaign === 'all' ? 1 : (0.7 + campMult * 0.3)));
   const spListenersWoW = Math.round(4280000 * (campaign === 'all' ? 1 : (0.7 + campMult * 0.3)));
   const spListenersMoM = Math.round(4120000 * (campaign === 'all' ? 1 : (0.7 + campMult * 0.3)));
@@ -165,8 +240,6 @@ export const getMockPlatformData = (
     const base = 250000 * (1 + Math.cos(i * 0.4) * 0.2) * mult;
     const curVal = Math.round(base * 2.8);
     const compVal = Math.round(curVal * (compFactor + Math.sin(i * 0.5) * 0.04));
-    
-    // Check if any milestone matches this date label
     const ms = ABEL_PINTOS_MILESTONES.find(m => m.date === date);
 
     return {
@@ -292,7 +365,7 @@ export const getMockPlatformData = (
     ]
   };
 
-  // --- 2. INSTAGRAM (@abelpintos — ~2.55M seguidores) ---
+  // --- 2. INSTAGRAM ---
   const instaReach = Math.round(6800000 * mult);
   const instaReachWoW = Math.round(6400000 * mult);
   const instaReachMoM = Math.round(5900000 * mult);
@@ -449,7 +522,7 @@ export const getMockPlatformData = (
     ]
   };
 
-  // --- 3. YOUTUBE (@AbelPintos — ~1.71M suscriptores, >2.15B reproducciones) ---
+  // --- 3. YOUTUBE ---
   const ytViews = Math.round(14500000 * mult);
   const ytViewsWoW = Math.round(13800000 * mult);
   const ytViewsMoM = Math.round(12800000 * mult);
@@ -594,7 +667,7 @@ export const getMockPlatformData = (
     ]
   };
 
-  // --- 4. FACEBOOK (Página Oficial Abel Pintos — ~3.1M seguidores) ---
+  // --- 4. FACEBOOK ---
   const fbTotalReach = Math.round(5800000 * mult);
   const fbTotalReachWoW = Math.round(5400000 * mult);
   const fbTotalReachMoM = Math.round(5100000 * mult);
@@ -752,7 +825,7 @@ export const getMockPlatformData = (
     ]
   };
 
-  // --- 5. X (TWITTER) (@AbelPintos — ~1.7M seguidores) ---
+  // --- 5. TWITTER ---
   const twitterImpressions = Math.round(4900000 * mult);
   const twitterImpressionsWoW = Math.round(4500000 * mult);
   const twitterImpressionsMoM = Math.round(4200000 * mult);
@@ -874,7 +947,7 @@ export const getMockPlatformData = (
     ]
   };
 
-  // --- 6. TIKTOK (@abel.pintos.musica — ~850K seguidores) ---
+  // --- 6. TIKTOK ---
   const tiktokViews = Math.round(8200000 * mult);
   const tiktokViewsWoW = Math.round(7600000 * mult);
   const tiktokViewsMoM = Math.round(7100000 * mult);
@@ -1020,7 +1093,7 @@ export const getMockPlatformData = (
     ]
   };
 
-  // --- 7. THREADS (@abelpintos — ~420K seguidores) ---
+  // --- 7. THREADS ---
   const threadsReplies = Math.round(84000 * mult);
   const threadsRepliesWoW = Math.round(76000 * mult);
   const threadsRepliesMoM = Math.round(68000 * mult);
@@ -1469,4 +1542,3 @@ export const getComparativePeriodLabel = (
     fullSubtitle: `${curLabel} vs. ${compLabel}`
   };
 };
-

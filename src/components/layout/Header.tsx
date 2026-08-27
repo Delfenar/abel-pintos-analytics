@@ -1,8 +1,8 @@
 import React from 'react';
 import { useDashboard } from '../../context/DashboardContext';
 import { DateRangeKey, PlatformId, ComparisonMode, CampaignId } from '../../types/analytics';
-import { CAMPAIGNS } from '../../services/mockDataService';
 import { ComparisonSettingsModal } from '../ui/ComparisonSettingsModal';
+import { CampaignModal } from '../ui/CampaignModal';
 import { 
   Calendar, 
   RefreshCw, 
@@ -15,7 +15,9 @@ import {
   ArrowRightLeft,
   Settings,
   Percent,
-  Hash
+  Hash,
+  PlusCircle,
+  Filter
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -27,6 +29,11 @@ export const Header: React.FC = () => {
     setComparisonMode,
     activeCampaign,
     setActiveCampaign,
+    campaigns,
+    campaignSearchQuery,
+    setCampaignSearchQuery,
+    isCampaignModalOpen,
+    setIsCampaignModalOpen,
     customStartDate,
     setCustomStartDate,
     customEndDate,
@@ -59,6 +66,20 @@ export const Header: React.FC = () => {
     simulator: 'Servidor de Ingesta & API Feeds',
   };
 
+  // Filter campaigns in real time by name, year, event type, or city
+  const filteredCampaigns = campaigns.filter((c) => {
+    if (!campaignSearchQuery.trim()) return true;
+    const q = campaignSearchQuery.toLowerCase();
+    const typeLabel = c.type === 'tour' ? 'gira show' : c.type === 'release' ? 'lanzamiento música' : c.type === 'merch' ? 'merchandising libro' : 'prensa';
+    return (
+      c.label.toLowerCase().includes(q) ||
+      c.description.toLowerCase().includes(q) ||
+      c.year.toString().includes(q) ||
+      (c.city && c.city.toLowerCase().includes(q)) ||
+      typeLabel.includes(q)
+    );
+  });
+
   return (
     <>
       <header className="glass-panel border-b border-gold-400/20 sticky top-0 z-20 px-6 py-3.5 transition-all duration-300">
@@ -89,8 +110,8 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Center Search */}
-          <div className="relative hidden xl:block w-48">
+          {/* Center Track Search */}
+          <div className="relative hidden xl:block w-44">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
@@ -101,23 +122,48 @@ export const Header: React.FC = () => {
             />
           </div>
 
-          {/* Controls & Filters */}
+          {/* Controls & Campaign Management System */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Campaign Selector Filter */}
-            <div className="flex items-center bg-slate-900/90 border border-gold-400/30 rounded-xl p-1 text-xs">
-              <Layers className="w-3.5 h-3.5 text-gold-400 ml-2 mr-1" />
+            {/* Dynamic Campaign Search & Selector Box */}
+            <div className="flex items-center gap-1.5 bg-slate-900/90 border border-gold-400/30 rounded-xl p-1 text-xs">
+              <div className="relative flex items-center">
+                <Filter className="w-3.5 h-3.5 text-gold-400 ml-2 mr-1 shrink-0" />
+                <input
+                  type="text"
+                  value={campaignSearchQuery}
+                  onChange={(e) => setCampaignSearchQuery(e.target.value)}
+                  placeholder="Buscar campaña..."
+                  className="w-28 bg-transparent text-slate-200 focus:outline-none text-[11px] placeholder:text-slate-500"
+                />
+              </div>
+
               <select
                 value={activeCampaign}
                 onChange={(e) => setActiveCampaign(e.target.value as CampaignId)}
-                className="bg-transparent text-gold-300 font-bold focus:outline-none pr-2 cursor-pointer"
+                className="bg-transparent text-gold-300 font-bold focus:outline-none pr-2 cursor-pointer max-w-[180px] truncate"
               >
-                {CAMPAIGNS.map((c) => (
+                {filteredCampaigns.map((c) => (
                   <option key={c.id} value={c.id} className="bg-slate-950 text-slate-200">
-                    🎯 {c.label}
+                    🎯 {c.label} {c.year ? `(${c.year})` : ''}
                   </option>
                 ))}
+                {filteredCampaigns.length === 0 && (
+                  <option value="" disabled className="bg-slate-950 text-slate-400">
+                    Sin resultados
+                  </option>
+                )}
               </select>
             </div>
+
+            {/* + Nueva Campaña Button */}
+            <button
+              onClick={() => setIsCampaignModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-gold-400 hover:from-amber-400 hover:to-gold-300 text-slate-950 font-black text-xs transition-all shadow-md shadow-amber-500/20 cursor-pointer shrink-0"
+              title="Cargar nueva iniciativa de campaña"
+            >
+              <PlusCircle className="w-4 h-4 stroke-[2.5]" />
+              <span>+ Campaña</span>
+            </button>
 
             {/* Temporal Comparison Selector (WoW, MoM, YoY) */}
             <div className="flex items-center bg-slate-900/90 border border-gold-400/40 rounded-xl p-1 text-xs shadow-sm">
@@ -227,10 +273,15 @@ export const Header: React.FC = () => {
         </div>
       </header>
 
-      {/* Render Personalization Modal */}
+      {/* Modals */}
       <ComparisonSettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
+      />
+
+      <CampaignModal
+        isOpen={isCampaignModalOpen}
+        onClose={() => setIsCampaignModalOpen(false)}
       />
     </>
   );
