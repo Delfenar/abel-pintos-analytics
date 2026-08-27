@@ -174,7 +174,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const syncWithGoogleSheets = async () => {
     setIsSyncingSheets(true);
-    const success = await sendMetricsToGoogleSheets(globalOverview, platformDataMap, activeCampaign, dateRange);
+    const success = await sendMetricsToGoogleSheets(globalOverview, platformDataMap, activeCampaign, dateRange, campaigns);
     setIsSyncingSheets(false);
     
     if (success) {
