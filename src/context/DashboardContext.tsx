@@ -19,6 +19,8 @@ import {
   loadCampaignsFromStorage,
   saveCampaignsToStorage
 } from '../services/mockDataService';
+import { sendMetricsToGoogleSheets } from '../services/googleSheetsService';
+import { ToastNotification, ToastState } from '../components/ui/ToastNotification';
 
 interface DashboardContextType {
   activeView: PlatformId;
@@ -64,6 +66,10 @@ interface DashboardContextType {
   isRefreshing: boolean;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
+  isSyncingSheets: boolean;
+  syncWithGoogleSheets: () => Promise<void>;
+  toast: ToastState | null;
+  setToast: (toast: ToastState | null) => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -104,6 +110,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  const [isSyncingSheets, setIsSyncingSheets] = useState<boolean>(false);
+  const [toast, setToast] = useState<ToastState | null>(null);
+
   const addCampaign = (newCamp: CampaignFilter) => {
     setCampaigns(prev => {
       const updated = [...prev, newCamp];
@@ -112,7 +121,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   };
 
-  // Automatic date alignment when selecting a specific campaign
   useEffect(() => {
     if (activeCampaign && activeCampaign !== 'all') {
       const selected = campaigns.find(c => c.id === activeCampaign);
@@ -164,6 +172,24 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }, 600);
   };
 
+  const syncWithGoogleSheets = async () => {
+    setIsSyncingSheets(true);
+    const success = await sendMetricsToGoogleSheets(globalOverview, platformDataMap, activeCampaign, dateRange);
+    setIsSyncingSheets(false);
+    
+    if (success) {
+      setToast({
+        text: '¡Datos guardados con éxito en la hoja maestra!',
+        type: 'success'
+      });
+    } else {
+      setToast({
+        text: 'Error de conexión con la hoja de Google Sheets.',
+        type: 'error'
+      });
+    }
+  };
+
   return (
     <DashboardContext.Provider
       value={{
@@ -210,9 +236,14 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isRefreshing,
         searchQuery,
         setSearchQuery,
+        isSyncingSheets,
+        syncWithGoogleSheets,
+        toast,
+        setToast,
       }}
     >
       {children}
+      <ToastNotification toast={toast} onClose={() => setToast(null)} />
     </DashboardContext.Provider>
   );
 };

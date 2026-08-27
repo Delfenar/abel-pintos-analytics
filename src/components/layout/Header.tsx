@@ -17,7 +17,9 @@ import {
   Percent,
   Hash,
   PlusCircle,
-  Filter
+  Filter,
+  Cloud,
+  Loader2
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -48,6 +50,8 @@ export const Header: React.FC = () => {
     isRefreshing,
     searchQuery,
     setSearchQuery,
+    isSyncingSheets,
+    syncWithGoogleSheets,
   } = useDashboard();
 
   const handleExportCSV = () => {
@@ -66,7 +70,6 @@ export const Header: React.FC = () => {
     simulator: 'Servidor de Ingesta & API Feeds',
   };
 
-  // Filter campaigns in real time by name, year, event type, or city
   const filteredCampaigns = campaigns.filter((c) => {
     if (!campaignSearchQuery.trim()) return true;
     const q = campaignSearchQuery.toLowerCase();
@@ -163,6 +166,21 @@ export const Header: React.FC = () => {
             >
               <PlusCircle className="w-4 h-4 stroke-[2.5]" />
               <span>+ Campaña</span>
+            </button>
+
+            {/* Google Sheets Sync Webhook Button */}
+            <button
+              onClick={syncWithGoogleSheets}
+              disabled={isSyncingSheets}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-emerald-500/50 hover:border-emerald-400 text-emerald-400 hover:bg-emerald-500/10 font-bold text-xs transition-all shadow-sm cursor-pointer shrink-0"
+              title="Sincronizar métricas con la hoja maestra de Google Sheets en la nube"
+            >
+              {isSyncingSheets ? (
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+              ) : (
+                <Cloud className="w-4 h-4 text-emerald-400" />
+              )}
+              <span>Sincronizar con Google Sheets</span>
             </button>
 
             {/* Temporal Comparison Selector (WoW, MoM, YoY) */}
