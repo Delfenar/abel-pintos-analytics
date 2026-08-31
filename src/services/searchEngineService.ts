@@ -50,6 +50,9 @@ export interface UniversalSearchAggregation {
   query: string;
   totalResults: number;
   totalImpacts: number; // Reproducciones + Alcance
+  totalReproducciones: number; // Suma de Reproducciones
+  totalAlcance: number; // Suma de Alcance
+  totalImpactoCombinado: number; // totalReproducciones + totalAlcance
   totalInteractions: number; // Interacciones
   totalSaves: number; // Guardados
   totalClicks: number; // Clics
@@ -509,6 +512,9 @@ export const searchUniversalRecords = (
       query: '',
       totalResults: 0,
       totalImpacts: 0,
+      totalReproducciones: 0,
+      totalAlcance: 0,
+      totalImpactoCombinado: 0,
       totalInteractions: 0,
       totalSaves: 0,
       totalClicks: 0,
@@ -591,14 +597,28 @@ export const searchUniversalRecords = (
     platformImpactTotals[rec.plataforma] += impact;
   });
 
-  const totalImpacts = calcularImpactoTotal(matchedRecords);
-  const totalInteractions = calcularInteraccionesTotales(matchedRecords);
+  const totalReproducciones = matchedRecords.reduce((acc, item) => acc + Number(item.metricas?.reproducciones || 0), 0);
+  const totalAlcance = matchedRecords.reduce((acc, item) => acc + Number(item.metricas?.alcance || 0), 0);
+  const totalImpactoCombinado = totalReproducciones + totalAlcance;
+  const totalImpacts = totalImpactoCombinado;
+  const totalInteractions = matchedRecords.reduce((acc, item) => acc + Number(item.metricas?.interacciones || 0), 0);
   const totalSaves = matchedRecords.reduce((acc, r) => acc + Number(r.metricas?.guardados || 0), 0);
   const totalClicks = matchedRecords.reduce((acc, r) => acc + Number(r.metricas?.clics || 0), 0);
 
+  // Platform with highest volume of reproducciones / streams
+  const platformReproduccionesTotals: Record<PlatformName, number> = {
+    Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
+  };
+  matchedRecords.forEach(rec => {
+    platformReproduccionesTotals[rec.plataforma] += Number(rec.metricas?.reproducciones || 0);
+  });
+  const sortedByReproducciones = (Object.entries(platformReproduccionesTotals) as [PlatformName, number][])
+    .sort((a, b) => b[1] - a[1]);
   const sortedPlatforms = (Object.entries(platformImpactTotals) as [PlatformName, number][])
     .sort((a, b) => b[1] - a[1]);
-  const topPlatform: PlatformName = sortedPlatforms[0] && sortedPlatforms[0][1] > 0 ? sortedPlatforms[0][0] : 'Spotify';
+  const topPlatform: PlatformName = sortedByReproducciones[0] && sortedByReproducciones[0][1] > 0 
+    ? sortedByReproducciones[0][0] 
+    : (sortedPlatforms[0] && sortedPlatforms[0][1] > 0 ? sortedPlatforms[0][0] : 'Spotify');
 
   // Global Benchmark Totals across all master records
   const globalPlatformImpactTotals: Record<PlatformName, number> = {
@@ -730,6 +750,9 @@ export const searchUniversalRecords = (
     query: rawQuery,
     totalResults: matchedRecords.length,
     totalImpacts,
+    totalReproducciones,
+    totalAlcance,
+    totalImpactoCombinado,
     totalInteractions,
     totalSaves,
     totalClicks,
