@@ -1,7 +1,10 @@
+import React from 'react';
 import { ComparativeHeaderBanner } from '../ui/ComparativeHeaderBanner';
 import { useDashboard } from '../../context/DashboardContext';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
+import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
+import { SearchEmptyState } from '../ui/SearchEmptyState';
 import { CAMPAIGNS } from '../../services/mockDataService';
 import { BlackPantherIcon } from '../ui/BlackPantherIcon';
 import { 
@@ -38,8 +41,12 @@ const PantherMarkerDot = (props: any) => {
 
 export const OverviewView: React.FC = () => {
   const { 
-    globalOverview, 
-    platformDataMap, 
+    filteredOverview, 
+    filteredPlatformDataMap, 
+    matchedContentCount,
+    hasMatches,
+    searchQuery,
+    setSearchQuery,
     dateRange, 
     activeCampaign, 
     comparisonMode,
@@ -51,12 +58,12 @@ export const OverviewView: React.FC = () => {
 
   const currentCampaignInfo = CAMPAIGNS.find(c => c.id === activeCampaign) || CAMPAIGNS[0];
 
-  const allTopContent = Object.values(platformDataMap)
+  const allTopContent = Object.values(filteredPlatformDataMap)
     .flatMap((p) => p.topContent)
     .filter((c) => activeCampaign === 'all' || c.campaignId === activeCampaign)
     .sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
 
-  const pieData = globalOverview.platformComparison.map((p) => ({
+  const pieData = filteredOverview.platformComparison.map((p) => ({
     name: p.platform,
     value: p.reach,
   }));
@@ -78,7 +85,7 @@ export const OverviewView: React.FC = () => {
       const diff = curVal - compVal;
       const pct = compVal > 0 ? ((diff / compVal) * 100).toFixed(1) : '0.0';
 
-      const milestoneMatch = globalOverview.milestones.find(m => m.date === label);
+      const milestoneMatch = filteredOverview.milestones.find(m => m.date === label);
 
       return (
         <div className="glass-panel p-3.5 rounded-2xl border border-gold-400/50 text-xs shadow-2xl space-y-1.5 bg-slate-950/95 text-slate-100 max-w-xs">
@@ -101,32 +108,34 @@ export const OverviewView: React.FC = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-4 pt-1">
-            <span className="flex items-center gap-1.5 font-semibold text-slate-200">
-              <span className="w-2.5 h-2.5 rounded-full bg-gold-400" />
-              Periodo Actual:
-            </span>
-            <span className="font-black text-slate-100">{curVal.toLocaleString()}</span>
-          </div>
-
-          {compVal > 0 && (
+          <div className="space-y-1 pt-1">
             <div className="flex items-center justify-between gap-4">
-              <span className="flex items-center gap-1.5 text-slate-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-500 border border-dashed" />
-                Periodo Comparado:
+              <span className="text-slate-400 font-medium">Periodo Actual:</span>
+              <span className="font-mono font-bold text-gold-400 text-sm">
+                {curVal.toLocaleString()}
               </span>
-              <span className="font-semibold text-slate-300">{compVal.toLocaleString()}</span>
             </div>
-          )}
 
-          {compVal > 0 && (
-            <div className="pt-1.5 border-t border-slate-800 flex items-center justify-between gap-4 text-[11px]">
-              <span className="text-slate-400">Variación ($\Delta$):</span>
-              <span className={`font-extrabold font-mono ${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {displayValueType === 'absolute'
-                  ? `${diff >= 0 ? '+' : ''}${diff.toLocaleString()} alc.`
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-slate-500 font-medium">Periodo Comparativo:</span>
+              <span className="font-mono font-semibold text-slate-400">
+                {compVal.toLocaleString()}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 pt-1.5 border-t border-slate-800/80">
+              <span className="text-slate-400 font-semibold">Variación Temporal:</span>
+              <span className={`font-mono font-black ${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {displayValueType === 'absolute' 
+                  ? `${diff >= 0 ? '+' : ''}${diff.toLocaleString()} ΔN`
                   : `${diff >= 0 ? '+' : ''}${pct}%`}
               </span>
+            </div>
+          </div>
+
+          {milestoneMatch?.category && (
+            <div className="text-[10px] text-slate-400 italic pt-1 border-t border-slate-900">
+              Categoría de Hito: {milestoneMatch.category}
             </div>
           )}
         </div>
@@ -174,209 +183,231 @@ export const OverviewView: React.FC = () => {
         </div>
       </div>
 
+      {/* Active Filter Banner when Search is Active */}
+      {searchQuery && (
+        <ActiveFilterBanner 
+          query={searchQuery} 
+          matchedCount={matchedContentCount} 
+          onClear={() => setSearchQuery('')} 
+        />
+      )}
+
       {/* Dynamic Comparative Header Banner */}
       <ComparativeHeaderBanner />
 
-      {/* Global Stat Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          id="totalReach"
-          label={globalOverview.totalReach.label}
-          value={globalOverview.totalReach.value}
-          previousWeekValue={globalOverview.totalReach.previousWeekValue}
-          previousMonthValue={globalOverview.totalReach.previousMonthValue}
-          previousYearValue={globalOverview.totalReach.previousYearValue}
-          sparkline={globalOverview.totalReach.sparkline}
-          brandColor="#D4AF37"
-          description="Alcance consolidado único en todas las plataformas oficiales de Abel Pintos."
+      {/* Empty State vs Normal Dashboard Content */}
+      {!hasMatches ? (
+        <SearchEmptyState 
+          query={searchQuery} 
+          onReset={() => setSearchQuery('')}
+          onSuggestionClick={(suggestion) => setSearchQuery(suggestion)}
         />
-        <StatCard
-          id="totalImpressions"
-          label={globalOverview.totalImpressions.label}
-          value={globalOverview.totalImpressions.value}
-          previousWeekValue={globalOverview.totalImpressions.previousWeekValue}
-          previousMonthValue={globalOverview.totalImpressions.previousMonthValue}
-          previousYearValue={globalOverview.totalImpressions.previousYearValue}
-          sparkline={globalOverview.totalImpressions.sparkline}
-          brandColor="#C5A059"
-          description="Suma total de streams en Spotify y reproducciones de video/posts."
-        />
-        <StatCard
-          id="avgEngagementRate"
-          label={globalOverview.avgEngagementRate.label}
-          value={globalOverview.avgEngagementRate.value}
-          previousWeekValue={globalOverview.avgEngagementRate.previousWeekValue}
-          previousMonthValue={globalOverview.avgEngagementRate.previousMonthValue}
-          previousYearValue={globalOverview.avgEngagementRate.previousYearValue}
-          unit="%"
-          format="percent"
-          brandColor="#10B981"
-          status={globalOverview.avgEngagementRate.status}
-          description="Engagement rate medio de la comunidad activa de fans."
-        />
-        <StatCard
-          id="totalFollowers"
-          label={globalOverview.totalFollowers.label}
-          value={globalOverview.totalFollowers.value}
-          previousWeekValue={globalOverview.totalFollowers.previousWeekValue}
-          previousMonthValue={globalOverview.totalFollowers.previousMonthValue}
-          previousYearValue={globalOverview.totalFollowers.previousYearValue}
-          sparkline={globalOverview.totalFollowers.sparkline}
-          brandColor="#E1306C"
-          description="Seguidores directos agregados en redes y suscriptores de YouTube."
-        />
-      </div>
-
-      {/* Main Evolution Timeline Chart with Panther Face Markers */}
-      <div className="glass-panel p-6 rounded-2xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-          <div>
-            <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-              <BlackPantherIcon size={22} />
-              Gráfico de Evolución Temporal (Marcadores Pantera Negra)
-            </h3>
-            <p className="text-xs text-slate-400">
-              Superposición de curva actual (sólida) vs periodo anterior ({compModeLabel} - punteada) con cara de Pantera Negra en cada hito
-            </p>
+      ) : (
+        <>
+          {/* Global Stat Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              id="totalReach"
+              label={filteredOverview.totalReach.label}
+              value={filteredOverview.totalReach.value}
+              previousWeekValue={filteredOverview.totalReach.previousWeekValue}
+              previousMonthValue={filteredOverview.totalReach.previousMonthValue}
+              previousYearValue={filteredOverview.totalReach.previousYearValue}
+              sparkline={filteredOverview.totalReach.sparkline}
+              brandColor="#D4AF37"
+              description="Alcance consolidado único en todas las plataformas oficiales de Abel Pintos."
+            />
+            <StatCard
+              id="totalImpressions"
+              label={filteredOverview.totalImpressions.label}
+              value={filteredOverview.totalImpressions.value}
+              previousWeekValue={filteredOverview.totalImpressions.previousWeekValue}
+              previousMonthValue={filteredOverview.totalImpressions.previousMonthValue}
+              previousYearValue={filteredOverview.totalImpressions.previousYearValue}
+              sparkline={filteredOverview.totalImpressions.sparkline}
+              brandColor="#C5A059"
+              description="Suma total de streams en Spotify y reproducciones de video/posts."
+            />
+            <StatCard
+              id="avgEngagementRate"
+              label={filteredOverview.avgEngagementRate.label}
+              value={filteredOverview.avgEngagementRate.value}
+              previousWeekValue={filteredOverview.avgEngagementRate.previousWeekValue}
+              previousMonthValue={filteredOverview.avgEngagementRate.previousMonthValue}
+              previousYearValue={filteredOverview.avgEngagementRate.previousYearValue}
+              unit="%"
+              format="percent"
+              brandColor="#10B981"
+              status={filteredOverview.avgEngagementRate.status}
+              description="Engagement rate medio de la comunidad activa de fans."
+            />
+            <StatCard
+              id="totalFollowers"
+              label={filteredOverview.totalFollowers.label}
+              value={filteredOverview.totalFollowers.value}
+              previousWeekValue={filteredOverview.totalFollowers.previousWeekValue}
+              previousMonthValue={filteredOverview.totalFollowers.previousMonthValue}
+              previousYearValue={filteredOverview.totalFollowers.previousYearValue}
+              sparkline={filteredOverview.totalFollowers.sparkline}
+              brandColor="#E1306C"
+              description="Seguidores directos agregados en redes y suscriptores de YouTube."
+            />
           </div>
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            <span className="flex items-center gap-1.5 font-bold text-gold-300">
-              <span className="w-3 h-1 bg-gold-400 rounded-full" /> Periodo Actual
-            </span>
-            <span className="flex items-center gap-1.5 font-semibold text-slate-400">
-              <span className="w-3 h-1 border-t-2 border-dashed border-slate-400" /> Periodo Comparado
-            </span>
-            <span className="flex items-center gap-1.5 font-bold text-gold-400">
-              <BlackPantherIcon size={16} /> Marcadore Hito Pantera
-            </span>
+
+          {/* Main Evolution Timeline Chart with Panther Face Markers */}
+          <div className="glass-panel p-6 rounded-3xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-lg font-black text-slate-100 flex items-center gap-2">
+                  <BlackPantherIcon size={20} />
+                  Evolución Multicanal & Hitos Clave
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Contrastando Periodo Actual vs. Periodo Comparativo con marcadores de hitos oficiales.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4 text-xs font-semibold">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-gold-400 shadow-sm shadow-gold-500/50" />
+                  <span className="text-slate-200">Periodo Actual</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-0.5 border-b-2 border-dashed border-slate-500" />
+                  <span className="text-slate-400">Comparativo</span>
+                </div>
+                {showMilestones && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gold-400/10 border border-gold-400/30 text-gold-300">
+                    <BlackPantherIcon size={14} />
+                    <span>Hitos Activos</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="h-80 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={filteredOverview.multiPlatformTimeSeries} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="goldAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#D4AF37" stopOpacity={0.0} />
+                    </linearGradient>
+                    <linearGradient id="compAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#64748B" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#64748B" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
+                  <XAxis dataKey="date" stroke="#64748B" fontSize={11} tickLine={false} />
+                  <YAxis stroke="#64748B" fontSize={11} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip content={<CustomTooltip />} />
+
+                  <Area
+                    type="monotone"
+                    dataKey="comparison"
+                    name="Periodo Anterior"
+                    stroke="#64748B"
+                    strokeWidth={2}
+                    strokeDasharray="4 4"
+                    fillOpacity={1}
+                    fill="url(#compAreaGrad)"
+                  />
+
+                  <Area
+                    type="monotone"
+                    dataKey="current"
+                    name="Periodo Actual"
+                    stroke="#D4AF37"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#goldAreaGrad)"
+                  />
+
+                  {/* Render Panther Face Marker Dots on Milestone Days */}
+                  {showMilestones && filteredOverview.milestones.map((ms) => {
+                    const matchedPoint = filteredOverview.multiPlatformTimeSeries.find(p => p.date === ms.date);
+                    if (!matchedPoint) return null;
+                    return (
+                      <ReferenceDot
+                        key={ms.id}
+                        x={ms.date}
+                        y={matchedPoint.current}
+                        shape={<PantherMarkerDot />}
+                      />
+                    );
+                  })}
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
 
-        <div className="h-84 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={globalOverview.multiPlatformTimeSeries} margin={{ top: 20, right: 20, left: -10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorCur" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#D4AF37" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-              <XAxis dataKey="date" stroke="#94A3B8" fontSize={11} tickLine={false} />
-              <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area 
-                type="monotone" 
-                dataKey="current" 
-                name="Periodo Actual" 
-                stroke="#D4AF37" 
-                strokeWidth={3} 
-                fillOpacity={1} 
-                fill="url(#colorCur)" 
-              />
-              <Area 
-                type="monotone" 
-                dataKey="comparison" 
-                name="Comparación" 
-                stroke="#94A3B8" 
-                strokeWidth={2} 
-                strokeDasharray="5 5" 
-                fill="transparent" 
-              />
+          {/* Distribution and Performance Breakdown Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Pie Chart: Distribution by Network with Crisp White Hover Text */}
+            <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-black text-slate-100 mb-1">
+                  Distribución de Audiencia por Canal
+                </h3>
+                <p className="text-xs text-slate-400 mb-4">
+                  Cuota de impacto relativo en la comunidad digital de Abel Pintos.
+                </p>
+              </div>
 
-              {/* Render Black Panther Face Icons as Graph Markers on Milestones */}
-              {showMilestones && globalOverview.multiPlatformTimeSeries.map((point) => {
-                if (point.milestone) {
-                  return (
-                    <ReferenceDot
-                      key={point.date}
-                      x={point.date}
-                      y={point.current}
-                      shape={<PantherMarkerDot />}
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={85}
+                      paddingAngle={4}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#090D16',
+                        borderColor: '#D4AF37',
+                        borderRadius: '1rem',
+                        color: '#FFFFFF',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+                      }}
+                      itemStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
+                      labelStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
+                      formatter={(val: any) => [`${Number(val).toLocaleString()} cuentas`, 'Alcance']}
                     />
-                  );
-                }
-                return null;
-              })}
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
 
-      {/* Grid for Benchmark Radar & Distribution Pie */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Benchmark Radar */}
-        <div className="glass-panel p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                <Award className="w-5 h-5 text-gold-400" />
-                Benchmark Inter-Plataforma
-              </h3>
-              <p className="text-xs text-slate-400">Nivel de Engagement Rate % en cada red oficial</p>
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-slate-800">
+                {pieData.map((item, idx) => (
+                  <div key={item.name} className="flex items-center gap-1.5 text-[11px] text-slate-300">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                    <span>{item.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Top Content Breakdown Table */}
+            <div className="lg:col-span-2">
+              <ContentTable
+                title={searchQuery ? `Contenido Filtrado para "${searchQuery}"` : 'Contenido Destacado del Artista'}
+                items={allTopContent}
+              />
             </div>
           </div>
-
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={globalOverview.platformComparison}>
-                <PolarGrid stroke="#334155" />
-                <PolarAngleAxis dataKey="platform" stroke="#94A3B8" fontSize={11} />
-                <PolarRadiusAxis angle={30} domain={[0, 25]} stroke="#64748B" fontSize={10} />
-                <Radar name="Engagement Rate %" dataKey="engagement" stroke="#D4AF37" fill="#D4AF37" fillOpacity={0.4} />
-                <Tooltip contentStyle={{ backgroundColor: '#0F172A', borderColor: '#D4AF37', borderRadius: '0.75rem', fontSize: '12px' }} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Reach Distribution Donut */}
-        <div className="glass-panel p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                Distribución del Alcance por Red
-              </h3>
-              <p className="text-xs text-slate-400">Volumen relativo de audiencia por plataforma</p>
-            </div>
-          </div>
-
-          <div className="h-72 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={65}
-                  outerRadius={95}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#0F172A', 
-                    borderColor: '#D4AF37', 
-                    borderRadius: '0.75rem', 
-                    fontSize: '12px',
-                    color: '#FFFFFF'
-                  }} 
-                  itemStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
-                  labelStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Top Content & Tracks Table */}
-      <ContentTable title="Canciones & Publicaciones Más Exitosas (Abel Pintos)" items={allTopContent} />
+        </>
+      )}
     </div>
   );
 };

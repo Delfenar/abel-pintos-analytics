@@ -2,18 +2,26 @@ import React from 'react';
 import { useDashboard } from '../../context/DashboardContext';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
+import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { BlackPantherIcon } from '../ui/BlackPantherIcon';
 import { Twitter, Repeat, MessageSquare, Heart, ExternalLink } from 'lucide-react';
 
 export const TwitterView: React.FC = () => {
-  const { platformDataMap, comparisonMode } = useDashboard();
-  const data = platformDataMap.twitter;
+  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
+  const data = filteredPlatformDataMap.twitter || platformDataMap.twitter;
 
   if (!data) return null;
 
   return (
     <div className="space-y-6">
+      {searchQuery && (
+        <ActiveFilterBanner
+          query={searchQuery}
+          matchedCount={data.topContent.length}
+          onClear={() => setSearchQuery('')}
+        />
+      )}
       {/* Header Banner */}
       <div className="glass-panel-gold p-6 rounded-3xl border border-sky-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

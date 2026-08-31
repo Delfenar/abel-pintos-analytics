@@ -2,17 +2,25 @@ import React from 'react';
 import { useDashboard } from '../../context/DashboardContext';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
+import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { AtSign, MessageCircle, Repeat, Heart, Eye } from 'lucide-react';
 
 export const ThreadsView: React.FC = () => {
-  const { platformDataMap, comparisonMode } = useDashboard();
-  const data = platformDataMap.threads;
+  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
+  const data = filteredPlatformDataMap.threads || platformDataMap.threads;
 
   if (!data) return null;
 
   return (
     <div className="space-y-6">
+      {searchQuery && (
+        <ActiveFilterBanner
+          query={searchQuery}
+          matchedCount={data.topContent.length}
+          onClear={() => setSearchQuery('')}
+        />
+      )}
       {/* Header Banner */}
       <div className="glass-panel-gold p-6 rounded-3xl border border-slate-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

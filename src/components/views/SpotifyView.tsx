@@ -2,17 +2,25 @@ import React from 'react';
 import { useDashboard } from '../../context/DashboardContext';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
+import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Music, Radio, Bookmark, ListPlus, UserCheck, HeadphoneIcon, Disc, Flame } from 'lucide-react';
 
 export const SpotifyView: React.FC = () => {
-  const { platformDataMap, comparisonMode } = useDashboard();
-  const data = platformDataMap.spotify;
+  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
+  const data = filteredPlatformDataMap.spotify || platformDataMap.spotify;
 
   if (!data) return null;
 
   return (
     <div className="space-y-6">
+      {searchQuery && (
+        <ActiveFilterBanner
+          query={searchQuery}
+          matchedCount={data.topContent.length}
+          onClear={() => setSearchQuery('')}
+        />
+      )}
       {/* Header Banner - Abel Pintos Spotify Official */}
       <div className="glass-panel-gold p-6 rounded-3xl border border-emerald-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

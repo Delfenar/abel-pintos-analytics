@@ -3,6 +3,7 @@ import { useDashboard } from '../../context/DashboardContext';
 import { DateRangeKey, PlatformId, ComparisonMode, CampaignId } from '../../types/analytics';
 import { ComparisonSettingsModal } from '../ui/ComparisonSettingsModal';
 import { CampaignModal } from '../ui/CampaignModal';
+import { GlobalSearch } from '../ui/GlobalSearch';
 import { 
   Calendar, 
   RefreshCw, 
@@ -113,16 +114,9 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Center Track Search */}
-          <div className="relative hidden xl:block w-44">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar canción..."
-              className="w-full bg-slate-900/80 border border-gold-400/20 rounded-xl pl-9 pr-4 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-gold-400 transition-colors"
-            />
+          {/* Center Global Smart Search */}
+          <div className="w-full lg:max-w-xs xl:max-w-md">
+            <GlobalSearch />
           </div>
 
           {/* Controls & Campaign Management System */}

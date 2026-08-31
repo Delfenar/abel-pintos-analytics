@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { 
   PlatformId, 
   DateRangeKey, 
@@ -17,7 +17,9 @@ import {
   getGlobalOverviewData, 
   getMockApiPayloads,
   loadCampaignsFromStorage,
-  saveCampaignsToStorage
+  saveCampaignsToStorage,
+  applyGlobalSearchFilter,
+  GlobalSearchResult
 } from '../services/mockDataService';
 import { sendMetricsToGoogleSheets } from '../services/googleSheetsService';
 import { ToastNotification, ToastState } from '../components/ui/ToastNotification';
@@ -61,6 +63,10 @@ interface DashboardContextType {
   toggleDarkMode: () => void;
   platformDataMap: Record<string, PlatformData>;
   globalOverview: GlobalOverviewData;
+  filteredPlatformDataMap: Record<string, PlatformData>;
+  filteredOverview: GlobalOverviewData;
+  matchedContentCount: number;
+  hasMatches: boolean;
   apiSamples: ApiPayloadSample[];
   refreshData: () => void;
   isRefreshing: boolean;
@@ -149,6 +155,11 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setGlobalOverview(getGlobalOverviewData(dateRange, activeCampaign, comparisonMode, customComparisonType));
   }, [dateRange, activeCampaign, comparisonMode, customComparisonType]);
 
+  // Multivariable Global Search Filtering Engine
+  const searchResult: GlobalSearchResult = useMemo(() => {
+    return applyGlobalSearchFilter(globalOverview, platformDataMap, searchQuery, activeCampaign, campaigns);
+  }, [globalOverview, platformDataMap, searchQuery, activeCampaign, campaigns]);
+
   useEffect(() => {
     const root = document.documentElement;
     if (isDarkMode) {
@@ -174,7 +185,13 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const syncWithGoogleSheets = async () => {
     setIsSyncingSheets(true);
-    const success = await sendMetricsToGoogleSheets(globalOverview, platformDataMap, activeCampaign, dateRange, campaigns);
+    const success = await sendMetricsToGoogleSheets(
+      searchResult.filteredOverview, 
+      searchResult.filteredPlatformDataMap, 
+      activeCampaign, 
+      dateRange, 
+      campaigns
+    );
     setIsSyncingSheets(false);
     
     if (success) {
@@ -231,6 +248,10 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         toggleDarkMode,
         platformDataMap,
         globalOverview,
+        filteredPlatformDataMap: searchResult.filteredPlatformDataMap,
+        filteredOverview: searchResult.filteredOverview,
+        matchedContentCount: searchResult.matchedCount,
+        hasMatches: searchResult.hasMatches,
         apiSamples,
         refreshData,
         isRefreshing,
