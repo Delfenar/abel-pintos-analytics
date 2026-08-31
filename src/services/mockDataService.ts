@@ -64,6 +64,19 @@ export const DEFAULT_CAMPAIGNS: CampaignFilter[] = [
     city: 'Buenos Aires',
     targetReach: 3500000
   },
+  { 
+    id: 'release_ibuprofeno', 
+    label: 'Lanzamiento Single Ibuprofeno', 
+    description: 'Estreno del nuevo single 2026 y gira de medios', 
+    badge: 'SINGLE',
+    type: 'release',
+    startDate: '2026-08-27',
+    endDate: '2026-08-31',
+    year: 2026,
+    city: 'Buenos Aires',
+    targetStreams: 5000000,
+    targetReach: 3000000
+  },
 ];
 
 const LOCAL_STORAGE_KEY = 'panter_look_custom_campaigns';
@@ -361,7 +374,8 @@ export const getMockPlatformData = (
       { id: 'sp-2', platform: 'spotify', title: 'Motivos', type: 'Track Clásico', campaignId: 'tour30', publishedAt: 'Populares', metrics: { viewsOrReach: Math.round(4800000 * mult), interactions: Math.round(580000 * mult), engagementRate: 13.9, saves: Math.round(410000 * mult) } },
       { id: 'sp-3', platform: 'spotify', title: 'Sin Principio Ni Final', type: 'Balada Icónica', campaignId: 'album', publishedAt: 'Populares', metrics: { viewsOrReach: Math.round(4100000 * mult), interactions: Math.round(490000 * mult), engagementRate: 13.2, saves: Math.round(380000 * mult) } },
       { id: 'sp-4', platform: 'spotify', title: 'Piedra Libre', type: 'Single', campaignId: 'album', publishedAt: 'Éxitos', metrics: { viewsOrReach: Math.round(3400000 * mult), interactions: Math.round(390000 * mult), engagementRate: 12.5, saves: Math.round(290000 * mult) } },
-      { id: 'sp-5', platform: 'spotify', title: 'Alta en el Cielo', type: 'Álbum Patrio', campaignId: 'album', publishedAt: 'Edición Especial', metrics: { viewsOrReach: Math.round(2900000 * mult), interactions: Math.round(340000 * mult), engagementRate: 12.0, saves: Math.round(240000 * mult) } }
+      { id: 'sp-5', platform: 'spotify', title: 'Alta en el Cielo', type: 'Álbum Patrio', campaignId: 'album', publishedAt: 'Edición Especial', metrics: { viewsOrReach: Math.round(2900000 * mult), interactions: Math.round(340000 * mult), engagementRate: 12.0, saves: Math.round(240000 * mult) } },
+      { id: 'sp-6', platform: 'spotify', title: 'Ibuprofeno', type: 'Nuevo Single', campaignId: 'release_ibuprofeno', publishedAt: 'Agosto 2026', metrics: { viewsOrReach: Math.round(1950000 * mult), interactions: Math.round(275000 * mult), engagementRate: 14.1, saves: Math.round(190000 * mult) } }
     ]
   };
 
@@ -518,7 +532,8 @@ export const getMockPlatformData = (
     topContent: [
       { id: 'ig-1', platform: 'instagram', title: '✨ GIRA 30 ANIVERSARIO: ¡Nuevas fechas Buenos Aires & Rosario!', type: 'Reel En Vivo', campaignId: 'tour30', publishedAt: 'Hace 2 días', metrics: { viewsOrReach: Math.round(1850000 * mult), interactions: Math.round(310000 * mult), engagementRate: 16.7, saves: Math.round(89000 * mult) } },
       { id: 'ig-2', platform: 'instagram', title: '📖 Presentación del Libro Conmemorativo con fotos inéditas', type: 'Carrusel', campaignId: 'book', publishedAt: 'Hace 5 días', metrics: { viewsOrReach: Math.round(1420000 * mult), interactions: Math.round(210000 * mult), engagementRate: 14.8, saves: Math.round(74000 * mult) } },
-      { id: 'ig-3', platform: 'instagram', title: '🎤 Cantando "Motivos" a capella con el público', type: 'Reel Viral', campaignId: 'tour30', publishedAt: 'Hace 1 semana', metrics: { viewsOrReach: Math.round(1280000 * mult), interactions: Math.round(195000 * mult), engagementRate: 15.2, saves: Math.round(62000 * mult) } }
+      { id: 'ig-3', platform: 'instagram', title: '🎤 Cantando "Motivos" a capella con el público', type: 'Reel Viral', campaignId: 'tour30', publishedAt: 'Hace 1 semana', metrics: { viewsOrReach: Math.round(1280000 * mult), interactions: Math.round(195000 * mult), engagementRate: 15.2, saves: Math.round(62000 * mult) } },
+      { id: 'ig-4', platform: 'instagram', title: '🎶 Ensayo exclusivo: Arreglos y melodía de "Ibuprofeno"', type: 'Reel', campaignId: 'release_ibuprofeno', publishedAt: 'Hace 4 días', metrics: { viewsOrReach: Math.round(1150000 * mult), interactions: Math.round(178000 * mult), engagementRate: 15.5, saves: Math.round(58000 * mult) } }
     ]
   };
 
@@ -663,7 +678,8 @@ export const getMockPlatformData = (
     topContent: [
       { id: 'yt-1', platform: 'youtube', title: 'Abel Pintos - Oncemil (Video Oficial)', type: 'Videoclip Oficial', campaignId: 'album', publishedAt: 'Más Visto', metrics: { viewsOrReach: Math.round(5200000 * mult), interactions: Math.round(480000 * mult), engagementRate: 9.2, conversionRate: 8.5 } },
       { id: 'yt-2', platform: 'youtube', title: 'Abel Pintos - Motivos (En Vivo Teatro Ópera)', type: 'Recital En Vivo', campaignId: 'tour30', publishedAt: 'Popular', metrics: { viewsOrReach: Math.round(3800000 * mult), interactions: Math.round(340000 * mult), engagementRate: 8.9, conversionRate: 7.8 } },
-      { id: 'yt-3', platform: 'youtube', title: 'Abel Pintos - Sin Principio Ni Final', type: 'Videoclip Oficial', campaignId: 'album', publishedAt: 'Clásico', metrics: { viewsOrReach: Math.round(3100000 * mult), interactions: Math.round(290000 * mult), engagementRate: 9.4, conversionRate: 8.1 } }
+      { id: 'yt-3', platform: 'youtube', title: 'Abel Pintos - Sin Principio Ni Final', type: 'Videoclip Oficial', campaignId: 'album', publishedAt: 'Clásico', metrics: { viewsOrReach: Math.round(3100000 * mult), interactions: Math.round(290000 * mult), engagementRate: 9.4, conversionRate: 8.1 } },
+      { id: 'yt-4', platform: 'youtube', title: 'Abel Pintos - Ibuprofeno (Sesión Acústica Exclusiva)', type: 'Sesión Acústica', campaignId: 'release_ibuprofeno', publishedAt: 'Estreno', metrics: { viewsOrReach: Math.round(1650000 * mult), interactions: Math.round(195000 * mult), engagementRate: 11.8, conversionRate: 9.2 } }
     ]
   };
 
@@ -822,9 +838,10 @@ export const getMockPlatformData = (
     ],
     topContent: [
       { id: 'fb-1', platform: 'facebook', title: '🎫 ¡Entradas a la venta para los shows de Buenos Aires & Rosario! (Gira 30 Años)', type: 'Anuncio con Enlace', campaignId: 'tour30', publishedAt: 'Hace 3 días', metrics: { viewsOrReach: Math.round(2100000 * mult), interactions: Math.round(280000 * mult), engagementRate: 13.3, conversionRate: 6.4 } },
-      { id: 'fb-2', platform: 'facebook', title: '🎧 Escuchá "Oncemil", "Motivos" y "Sin Principio Ni Final" en todas las plataformas', type: 'Post de Álbum', campaignId: 'album', publishedAt: 'Hace 5 días', metrics: { viewsOrReach: Math.round(1800000 * mult), interactions: Math.round(230000 * mult), engagementRate: 12.7 } },
+      { id: 'fb-2', platform: 'facebook', title: '🎧 Escuchá "Oncemil" en todas las plataformas digitales oficiales', type: 'Post de Álbum', campaignId: 'album', publishedAt: 'Hace 5 días', metrics: { viewsOrReach: Math.round(1800000 * mult), interactions: Math.round(230000 * mult), engagementRate: 12.7 } },
       { id: 'fb-3', platform: 'facebook', title: '📚 Firma de ejemplares del Libro Conmemorativo en Buenos Aires', type: 'Evento Cultural', campaignId: 'book', publishedAt: 'Hace 1 semana', metrics: { viewsOrReach: Math.round(1450000 * mult), interactions: Math.round(190000 * mult), engagementRate: 13.1 } },
-      { id: 'fb-4', platform: 'facebook', title: '🇦🇷 Celebrando nuestras raíces con "Alta en el Cielo" en Rosario', type: 'Video Especial', campaignId: 'album', publishedAt: 'Hace 2 semanas', metrics: { viewsOrReach: Math.round(1350000 * mult), interactions: Math.round(175000 * mult), engagementRate: 12.9 } }
+      { id: 'fb-4', platform: 'facebook', title: '🇦🇷 Celebrando nuestras raíces con "Alta en el Cielo" en Rosario', type: 'Video Especial', campaignId: 'album', publishedAt: 'Hace 2 semanas', metrics: { viewsOrReach: Math.round(1350000 * mult), interactions: Math.round(175000 * mult), engagementRate: 12.9 } },
+      { id: 'fb-5', platform: 'facebook', title: '🎵 Estreno Oficial: Ya disponible nuestro nuevo single "Ibuprofeno"', type: 'Post de Lanzamiento', campaignId: 'release_ibuprofeno', publishedAt: 'Agosto 2026', metrics: { viewsOrReach: Math.round(1450000 * mult), interactions: Math.round(185000 * mult), engagementRate: 12.8 } }
     ]
   };
 
@@ -913,8 +930,9 @@ export const getMockPlatformData = (
     topContent: [
       { id: 'tw-1', platform: 'twitter', title: 'Nos vemos pronto en Buenos Aires y Rosario. ¡Gracias por estos 30 años juntos! ❤️', type: 'Tweet Oficial', campaignId: 'tour30', publishedAt: 'Ayer', metrics: { viewsOrReach: Math.round(920000 * mult), interactions: Math.round(145000 * mult), engagementRate: 15.7, sharesOrReposts: Math.round(24000 * mult) } },
       { id: 'tw-2', platform: 'twitter', title: 'Cantando "Oncemil" con ustedes en cada show de la Gira 30 Años 🎵', type: 'Tweet Musical', campaignId: 'tour30', publishedAt: 'Hace 3 días', metrics: { viewsOrReach: Math.round(840000 * mult), interactions: Math.round(132000 * mult), engagementRate: 15.7 } },
-      { id: 'tw-3', platform: 'twitter', title: '¿Cuál es tu canción favorita? ¿Motivos, La Llave o Sin Principio Ni Final? #Streaming2026', type: 'Tweet Encuesta', campaignId: 'album', publishedAt: 'Hace 5 días', metrics: { viewsOrReach: Math.round(780000 * mult), interactions: Math.round(124000 * mult), engagementRate: 15.9 } },
-      { id: 'tw-4', platform: 'twitter', title: 'Agotadas las entradas para el Teatro Ópera de Buenos Aires. ¡Son increíbles!', type: 'Tweet Anuncio', campaignId: 'tour30', publishedAt: 'Hace 1 semana', metrics: { viewsOrReach: Math.round(710000 * mult), interactions: Math.round(115000 * mult), engagementRate: 16.2 } }
+      { id: 'tw-3', platform: 'twitter', title: '¿Cuál es tu versión favorita de "Motivos" en vivo? #Gira30Años', type: 'Tweet Encuesta', campaignId: 'tour30', publishedAt: 'Hace 5 días', metrics: { viewsOrReach: Math.round(780000 * mult), interactions: Math.round(124000 * mult), engagementRate: 15.9 } },
+      { id: 'tw-4', platform: 'twitter', title: 'Agotadas las entradas para el Teatro Ópera de Buenos Aires. ¡Son increíbles!', type: 'Tweet Anuncio', campaignId: 'tour30', publishedAt: 'Hace 1 semana', metrics: { viewsOrReach: Math.round(710000 * mult), interactions: Math.round(115000 * mult), engagementRate: 16.2 } },
+      { id: 'tw-5', platform: 'twitter', title: 'Felices de compartir "Ibuprofeno" con ustedes. ¡Gracias por recibirla con tanto amor! ❤️', type: 'Tweet Oficial', campaignId: 'release_ibuprofeno', publishedAt: 'Agosto 2026', metrics: { viewsOrReach: Math.round(840000 * mult), interactions: Math.round(132000 * mult), engagementRate: 15.7 } }
     ]
   };
 
@@ -1063,7 +1081,8 @@ export const getMockPlatformData = (
       { id: 'tk-1', platform: 'tiktok', title: 'Cantando "Motivos" acústico antes de salir al escenario 🎸', type: 'Short Video', campaignId: 'tour30', publishedAt: 'Hace 2 días', metrics: { viewsOrReach: Math.round(2850000 * mult), interactions: Math.round(510000 * mult), engagementRate: 17.8, sharesOrReposts: Math.round(112000 * mult) } },
       { id: 'tk-2', platform: 'tiktok', title: 'Momento íntimo cantando "Oncemil" con el público en Rosario ❤️', type: 'Short Video', campaignId: 'tour30', publishedAt: 'Hace 4 días', metrics: { viewsOrReach: Math.round(2450000 * mult), interactions: Math.round(440000 * mult), engagementRate: 18.0 } },
       { id: 'tk-3', platform: 'tiktok', title: 'Backstage show Buenos Aires - "Piedra Libre" acústico 🎤', type: 'Short Video', campaignId: 'tour30', publishedAt: 'Hace 1 semana', metrics: { viewsOrReach: Math.round(1950000 * mult), interactions: Math.round(360000 * mult), engagementRate: 18.5 } },
-      { id: 'tk-4', platform: 'tiktok', title: 'Cuando suena "Sin Principio Ni Final" y todo el estadio canta al unísono ✨', type: 'Short Video', campaignId: 'tour30', publishedAt: 'Hace 10 días', metrics: { viewsOrReach: Math.round(1800000 * mult), interactions: Math.round(320000 * mult), engagementRate: 17.8 } }
+      { id: 'tk-4', platform: 'tiktok', title: 'Cuando suena "Sin Principio Ni Final" y todo el estadio canta al unísono ✨', type: 'Short Video', campaignId: 'tour30', publishedAt: 'Hace 10 días', metrics: { viewsOrReach: Math.round(1800000 * mult), interactions: Math.round(320000 * mult), engagementRate: 17.8 } },
+      { id: 'tk-5', platform: 'tiktok', title: 'Descubriendo la letra de "Ibuprofeno": ¿Ya la escuchaste? 🎵', type: 'Short Video', campaignId: 'release_ibuprofeno', publishedAt: 'Agosto 2026', metrics: { viewsOrReach: Math.round(1980000 * mult), interactions: Math.round(345000 * mult), engagementRate: 17.4 } }
     ]
   };
 
@@ -1083,8 +1102,8 @@ export const getMockPlatformData = (
   const threadsEr = Number((((threadsReplies + threadsReposts + threadsLikes) / threadsImpressions) * 100).toFixed(2));
 
   const threadsTimeSeries: TimeSeriesPoint[] = dateLabels.map((date, i) => {
-    const base = 40000 * (1 + Math.cos(i * 0.7) * 0.3) * mult;
-    const curVal = Math.round(base * 7.5);
+    const base = 42000 * (1 + Math.sin(i * 0.5) * 0.3) * mult;
+    const curVal = Math.round(base * 1.8);
     const compVal = Math.round(curVal * (compFactor + Math.sin(i * 0.4) * 0.05));
     const ms = ABEL_PINTOS_MILESTONES.find(m => m.date === date);
 
@@ -1093,8 +1112,9 @@ export const getMockPlatformData = (
       current: curVal,
       comparison: compVal,
       milestone: ms ? ms.title : undefined,
-      Impresiones: curVal,
-      'Impresiones Anterior': compVal,
+      Respuestas: curVal,
+      'Respuestas Anterior': compVal,
+      Likes: Math.round(base * 4.2),
     };
   });
 
@@ -1198,8 +1218,9 @@ export const getMockPlatformData = (
     ],
     topContent: [
       { id: 'th-1', platform: 'threads', title: 'Reflexionando sobre 30 años de música. ¿Cuál fue la primera canción que escuchaste? 🧵', type: 'Hilo Reflexión', campaignId: 'tour30', publishedAt: 'Hace 3 días', metrics: { viewsOrReach: Math.round(840000 * mult), interactions: Math.round(128000 * mult), engagementRate: 15.2, sharesOrReposts: Math.round(14200 * mult) } },
-      { id: 'th-2', platform: 'threads', title: 'El significado detrás de "Sin Principio Ni Final" y "Oncemil" ❤️', type: 'Hilo Musical', campaignId: 'album', publishedAt: 'Hace 6 días', metrics: { viewsOrReach: Math.round(790000 * mult), interactions: Math.round(118000 * mult), engagementRate: 14.9 } },
-      { id: 'th-3', platform: 'threads', title: 'Agradecimiento eterno a Rosario y Buenos Aires por tanto cariño en esta gira', type: 'Hilo de Gira', campaignId: 'tour30', publishedAt: 'Hace 1 semana', metrics: { viewsOrReach: Math.round(720000 * mult), interactions: Math.round(110000 * mult), engagementRate: 15.3 } }
+      { id: 'th-2', platform: 'threads', title: 'El significado íntimo detrás de "Sin Principio Ni Final" ❤️', type: 'Hilo Musical', campaignId: 'album', publishedAt: 'Hace 6 días', metrics: { viewsOrReach: Math.round(790000 * mult), interactions: Math.round(118000 * mult), engagementRate: 14.9 } },
+      { id: 'th-3', platform: 'threads', title: 'Agradecimiento eterno a Rosario y Buenos Aires por tanto cariño en esta gira', type: 'Hilo de Gira', campaignId: 'tour30', publishedAt: 'Hace 1 semana', metrics: { viewsOrReach: Math.round(720000 * mult), interactions: Math.round(110000 * mult), engagementRate: 15.3 } },
+      { id: 'th-4', platform: 'threads', title: 'El proceso íntimo de composición detrás del nuevo single "Ibuprofeno" 🧵', type: 'Hilo de Lanzamiento', campaignId: 'release_ibuprofeno', publishedAt: 'Agosto 2026', metrics: { viewsOrReach: Math.round(790000 * mult), interactions: Math.round(118000 * mult), engagementRate: 14.9 } }
     ]
   };
 
@@ -1526,6 +1547,27 @@ export interface GlobalSearchResult {
   hasMatches: boolean;
 }
 
+const normalizeStrictText = (text: string): string => {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .replace(/[/#,;.:\-_"']/g, ' ')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ');
+};
+
+const checkStrictMatch = (target: string, query: string): boolean => {
+  if (!target || !query) return false;
+  const nTarget = normalizeStrictText(target);
+  const nQuery = normalizeStrictText(query);
+  if (nTarget === nQuery) return true;
+  const escaped = nQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(^|\\s)${escaped}(\\s|$)`, 'i');
+  return regex.test(nTarget);
+};
+
 export const applyGlobalSearchFilter = (
   globalOverview: GlobalOverviewData,
   platformDataMap: Record<string, PlatformData>,
@@ -1546,21 +1588,32 @@ export const applyGlobalSearchFilter = (
     };
   }
 
-  const q = query.toLowerCase().trim();
+  const q = normalizeStrictText(query);
 
-  // 1. Check if searching by platform name
-  const platformKeywords = ['spotify', 'instagram', 'youtube', 'facebook', 'twitter', 'x', 'tiktok', 'threads'];
-  const matchedPlatformKey = platformKeywords.find(pk => q === pk || q.includes(pk) || pk.includes(q));
+  // Platform keywords
+  const platformKeywords: Record<string, string> = {
+    spotify: 'spotify',
+    youtube: 'youtube',
+    instagram: 'instagram',
+    facebook: 'facebook',
+    twitter: 'twitter',
+    x: 'twitter',
+    tiktok: 'tiktok',
+    threads: 'threads'
+  };
 
-  // 2. Check if matching campaigns
+  const isPlatformSearch = platformKeywords[q] !== undefined;
+  const targetPlatformKey = platformKeywords[q];
+
+  // Campaign matching
   const matchedCampaign = campaigns.find(c => 
-    c.label.toLowerCase().includes(q) || 
-    c.description.toLowerCase().includes(q) ||
-    (c.city && c.city.toLowerCase().includes(q)) ||
-    c.year.toString().includes(q)
+    checkStrictMatch(c.label, q) || 
+    checkStrictMatch(c.description, q) ||
+    (c.city && checkStrictMatch(c.city, q)) ||
+    c.year.toString() === q
   );
 
-  // 3. Filter content items across all platforms
+  // Filter content items across all platforms with strict logic
   const newPlatformDataMap: Record<string, PlatformData> = {};
   let totalMatchedItems = 0;
   let aggregatedViewsOrReach = 0;
@@ -1568,23 +1621,30 @@ export const applyGlobalSearchFilter = (
 
   Object.entries(platformDataMap).forEach(([key, pData]) => {
     // If user searched for a specific platform, only keep matching platform
-    const platformMatches = !matchedPlatformKey || (matchedPlatformKey === 'x' ? key === 'twitter' : key === matchedPlatformKey);
+    if (isPlatformSearch && key !== targetPlatformKey) {
+      newPlatformDataMap[key] = {
+        ...pData,
+        topContent: []
+      };
+      return;
+    }
 
     const filteredContent = pData.topContent.filter(item => {
       if (activeCampaign !== 'all' && item.campaignId && item.campaignId !== activeCampaign) {
         return false;
       }
 
-      const matchText = (
-        item.title.toLowerCase().includes(q) ||
-        item.type.toLowerCase().includes(q) ||
-        item.platform.toLowerCase().includes(q) ||
-        (item.campaignId && item.campaignId.toLowerCase().includes(q))
-      );
+      if (isPlatformSearch && key === targetPlatformKey) {
+        return true;
+      }
 
-      const campaignMatches = matchedCampaign ? item.campaignId === matchedCampaign.id : false;
+      const titleMatch = checkStrictMatch(item.title, q);
+      const typeMatch = checkStrictMatch(item.type, q);
+      const campaignMatch = matchedCampaign 
+        ? item.campaignId === matchedCampaign.id 
+        : item.campaignId ? checkStrictMatch(item.campaignId, q) : false;
 
-      return platformMatches && (matchText || campaignMatches);
+      return titleMatch || typeMatch || campaignMatch;
     });
 
     totalMatchedItems += filteredContent.length;
@@ -1599,11 +1659,7 @@ export const applyGlobalSearchFilter = (
     };
   });
 
-  const hasDirectPlatformMatch = !!matchedPlatformKey;
-  const hasDirectCampaignMatch = !!matchedCampaign;
-  const hasContentMatch = totalMatchedItems > 0;
-
-  const hasMatches = hasContentMatch || hasDirectPlatformMatch || hasDirectCampaignMatch;
+  const hasMatches = totalMatchedItems > 0 || (isPlatformSearch && !!targetPlatformKey);
 
   if (!hasMatches) {
     return {
@@ -1622,7 +1678,7 @@ export const applyGlobalSearchFilter = (
     };
   }
 
-  // Calculate filtered overview stats
+  // Calculate filtered overview stats strictly on matched contents
   let filteredOverview = { ...globalOverview };
 
   if (totalMatchedItems > 0) {
@@ -1650,7 +1706,7 @@ export const applyGlobalSearchFilter = (
   return {
     filteredOverview,
     filteredPlatformDataMap: newPlatformDataMap,
-    matchedCount: totalMatchedItems || (hasDirectPlatformMatch ? 1 : 0) || (hasDirectCampaignMatch ? 1 : 0),
+    matchedCount: totalMatchedItems,
     hasMatches: true
   };
 };
