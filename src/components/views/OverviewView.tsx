@@ -3,7 +3,8 @@ import { ComparativeHeaderBanner } from '../ui/ComparativeHeaderBanner';
 import { useDashboard } from '../../context/DashboardContext';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
-import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
+import { SearchHeaderBanner } from '../ui/SearchHeaderBanner';
+import { SearchExecutiveSummary } from '../ui/SearchExecutiveSummary';
 import { SearchEmptyState } from '../ui/SearchEmptyState';
 import { CAMPAIGNS } from '../../services/mockDataService';
 import { BlackPantherIcon } from '../ui/BlackPantherIcon';
@@ -183,13 +184,18 @@ export const OverviewView: React.FC = () => {
         </div>
       </div>
 
-      {/* Active Filter Banner when Search is Active */}
+      {/* Prominent Search Header Banner when Search is Active */}
       {searchQuery && (
-        <ActiveFilterBanner 
+        <SearchHeaderBanner 
           query={searchQuery} 
           matchedCount={matchedContentCount} 
           onClear={() => setSearchQuery('')} 
         />
+      )}
+
+      {/* Dynamic Executive Summary Widget when Search is Active and has matches */}
+      {searchQuery && hasMatches && (
+        <SearchExecutiveSummary query={searchQuery} />
       )}
 
       {/* Dynamic Comparative Header Banner */}

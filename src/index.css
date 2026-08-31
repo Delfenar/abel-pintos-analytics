@@ -58,3 +58,33 @@
   background-color: #f8fafc;
   color: #0f172a;
 }
+
+/* Print and PDF Export Media Rules */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  header, aside, nav, .print\:hidden {
+    display: none !important;
+  }
+
+  #printable-report {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+}
