@@ -5,6 +5,7 @@ import { ContentTable } from '../ui/ContentTable';
 import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Youtube, Play, Clock, UserPlus, Image, Award } from 'lucide-react';
+import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 
 export const YouTubeView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
@@ -37,6 +38,13 @@ export const YouTubeView: React.FC = () => {
           <div className="text-lg font-bold text-slate-100">@AbelPintos</div>
         </div>
       </div>
+
+      {/* Global Channel Metrics from Audiencia_General (Visualizaciones, Interacciones, Compartidos, Nuevos Seguidores) */}
+      <ChannelAudienceCards 
+        platform="YouTube" 
+        title="Métricas Globales de Canal — YouTube"
+        subtitle="Visualizaciones, Interacciones, Compartidos y Nuevos Suscriptores (Google Sheets)"
+      />
 
       {/* Specified KPIs Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

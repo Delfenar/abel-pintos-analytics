@@ -26,9 +26,15 @@ import {
   searchUniversalRecords, 
   UniversalSearchAggregation, 
   MASTER_INDEXABLE_RECORDS,
-  UniversalRecord
+  UniversalRecord,
+  PlatformName
 } from '../services/searchEngineService';
-import { sendMetricsToGoogleSheets, fetchGoogleSheetsMetrics } from '../services/googleSheetsService';
+import { 
+  sendMetricsToGoogleSheets, 
+  fetchGoogleSheetsMetrics,
+  computeChannelAudienceMetrics,
+  ChannelAudienceMetric
+} from '../services/googleSheetsService';
 import { ToastNotification, ToastState } from '../components/ui/ToastNotification';
 
 interface DashboardContextType {
@@ -94,6 +100,7 @@ interface DashboardContextType {
   liveSheetsRecords: UniversalRecord[];
   isLoadingSheets: boolean;
   loadLiveSheetsData: () => Promise<void>;
+  channelAudienceMetrics: Record<PlatformName, ChannelAudienceMetric>;
   toast: ToastState | null;
   setToast: (toast: ToastState | null) => void;
 }
@@ -252,6 +259,12 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return searchUniversalRecords(searchQuery, activeDataset);
   }, [searchQuery, liveSheetsRecords]);
 
+  // Channel Audience Metrics (Visualizaciones, Interacciones, Contenidos_Compartidos, Nuevos_Seguidores)
+  const channelAudienceMetrics: Record<PlatformName, ChannelAudienceMetric> = useMemo(() => {
+    const activeDataset = liveSheetsRecords.length > 0 ? liveSheetsRecords : MASTER_INDEXABLE_RECORDS;
+    return computeChannelAudienceMetrics(activeDataset);
+  }, [liveSheetsRecords]);
+
   useEffect(() => {
     const root = document.documentElement;
     if (isDarkMode) {
@@ -367,6 +380,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         liveSheetsRecords,
         isLoadingSheets,
         loadLiveSheetsData,
+        channelAudienceMetrics,
         toast,
         setToast,
       }}

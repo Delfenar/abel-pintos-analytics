@@ -5,6 +5,7 @@ import { ContentTable } from '../ui/ContentTable';
 import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from 'recharts';
 import { Video, Play, Share2, Heart, Users, Clock } from 'lucide-react';
+import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 
 export const TikTokView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
@@ -42,6 +43,13 @@ export const TikTokView: React.FC = () => {
           <p className="text-xs text-slate-300 mt-1">850K+ Seguidores | Retención por segundo, acústicos virales y watch-through rate</p>
         </div>
       </div>
+
+      {/* Global Channel Metrics from Audiencia_General (Visualizaciones, Interacciones, Compartidos, Nuevos Seguidores) */}
+      <ChannelAudienceCards 
+        platform="TikTok" 
+        title="Métricas Globales de Canal — TikTok"
+        subtitle="Visualizaciones, Interacciones, Contenidos Compartidos y Nuevos Fans (Google Sheets)"
+      />
 
       {/* Specified KPIs Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

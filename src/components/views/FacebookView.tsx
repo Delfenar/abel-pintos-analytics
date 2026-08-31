@@ -5,6 +5,7 @@ import { ContentTable } from '../ui/ContentTable';
 import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { Facebook, DollarSign, MousePointer, Users, ThumbsUp } from 'lucide-react';
+import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 
 export const FacebookView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
@@ -32,6 +33,13 @@ export const FacebookView: React.FC = () => {
           <p className="text-xs text-slate-300 mt-1">3.1M+ Seguidores | Análisis de Alcance Orgánico vs Anuncios de Gira</p>
         </div>
       </div>
+
+      {/* Global Channel Metrics from Audiencia_General (Visualizaciones, Interacciones, Compartidos, Nuevos Seguidores) */}
+      <ChannelAudienceCards 
+        platform="Facebook" 
+        title="Métricas Globales de Página — Facebook"
+        subtitle="Visualizaciones, Interacciones, Contenidos Compartidos y Nuevos Fans (Google Sheets)"
+      />
 
       {/* Specified KPIs Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

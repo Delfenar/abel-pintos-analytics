@@ -6,6 +6,7 @@ import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { BlackPantherIcon } from '../ui/BlackPantherIcon';
 import { Twitter, Repeat, MessageSquare, Heart, ExternalLink } from 'lucide-react';
+import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 
 export const TwitterView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
@@ -33,6 +34,13 @@ export const TwitterView: React.FC = () => {
           <p className="text-xs text-slate-300 mt-1">1.7M+ Seguidores | Análisis de impresiones, retweets y clics en enlaces</p>
         </div>
       </div>
+
+      {/* Global Channel Metrics from Audiencia_General (Visualizaciones, Interacciones, Compartidos, Nuevos Seguidores) */}
+      <ChannelAudienceCards 
+        platform="X" 
+        title="Métricas Globales de Perfil — X (Twitter)"
+        subtitle="Visualizaciones, Interacciones, Retweets/Compartidos y Nuevos Seguidores (Google Sheets)"
+      />
 
       {/* Specified KPIs Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -6,6 +6,7 @@ import { ComparativeHeaderBanner } from '../ui/ComparativeHeaderBanner';
 import { UniversalSearchResults } from '../ui/UniversalSearchResults';
 import { SearchEmptyState } from '../ui/SearchEmptyState';
 import { useDashboard } from '../../context/DashboardContext';
+import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
 import { CAMPAIGNS } from '../../services/mockDataService';
@@ -171,8 +172,11 @@ export const OverviewView: React.FC = () => {
       {/* 1. Dynamic Live Header with Real-Time Clock & Pulsing Badge */}
       <LiveHeader />
 
-      {/* 2. Live Moment Sampling Stat Cards (Audiencia 17.4M+, Spotify, YouTube, IG, TikTok, FB, X, Threads) */}
+      {/* 2. Live Stat Cards for 7 Official Networks */}
       <LiveStatCards />
+
+      {/* 2.5 Global Channel Metrics from Audiencia_General (Visualizaciones, Interacciones, Compartidos, Nuevos Seguidores) */}
+      <ChannelAudienceCards />
 
       {/* 3. 24h Daily Pulse (Hourly Streams/Interactions) & Live Featured Content Feed */}
       <LiveDailyPulse />

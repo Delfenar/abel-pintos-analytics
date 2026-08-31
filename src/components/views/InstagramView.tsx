@@ -5,6 +5,7 @@ import { ContentTable } from '../ui/ContentTable';
 import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Instagram, Bookmark, Link2, Sparkles, Heart, MessageSquare, Share2 } from 'lucide-react';
+import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 
 export const InstagramView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
@@ -37,6 +38,13 @@ export const InstagramView: React.FC = () => {
           <div className="text-lg font-bold text-slate-100">@abelpintos</div>
         </div>
       </div>
+
+      {/* Global Channel Metrics from Audiencia_General (Visualizaciones, Interacciones, Compartidos, Nuevos Seguidores) */}
+      <ChannelAudienceCards 
+        platform="Instagram" 
+        title="Métricas Globales de Perfil — Instagram"
+        subtitle="Visualizaciones, Interacciones, Contenidos Compartidos y Nuevos Seguidores (Google Sheets)"
+      />
 
       {/* Specified KPIs Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

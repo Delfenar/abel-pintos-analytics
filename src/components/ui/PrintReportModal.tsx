@@ -11,7 +11,7 @@ interface PrintReportModalProps {
 }
 
 export const PrintReportModal: React.FC<PrintReportModalProps> = ({ isOpen, onClose, query }) => {
-  const { universalSearchAggregation } = useDashboard();
+  const { universalSearchAggregation, channelAudienceMetrics } = useDashboard();
 
   if (!isOpen) return null;
 
@@ -158,7 +158,57 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({ isOpen, onCl
             </div>
           </div>
 
-          {/* 3. Detailed Content Breakdown Table with Footer Totals */}
+          {/* 3. Global Channel Metrics Table (Audiencia_General) */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 print:text-black flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-gold-400 print:text-amber-800" />
+              Métricas Globales por Canal (Solapa Audiencia_General)
+            </h3>
+            <div className="border border-slate-800 print:border-slate-300 rounded-xl overflow-hidden">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-900 print:bg-slate-100 border-b border-slate-800 print:border-slate-300 text-[10px] font-bold text-slate-400 print:text-slate-700 uppercase">
+                    <th className="py-2 px-3">Plataforma / Canal</th>
+                    <th className="py-2 px-3 text-right">Visualizaciones Perfil</th>
+                    <th className="py-2 px-3 text-right">Interacciones Globales</th>
+                    <th className="py-2 px-3 text-right">Contenidos Compartidos</th>
+                    <th className="py-2 px-3 text-right">+Seguidores Ganados</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800 print:divide-slate-200">
+                  {platformsList.map((plat) => {
+                    const data = dual.platformBreakdowns[plat];
+                    const aud = channelAudienceMetrics[plat] || {
+                      platform: plat,
+                      visualizaciones: 0,
+                      interacciones: 0,
+                      contenidosCompartidos: 0,
+                      nuevosSeguidores: 0
+                    };
+                    return (
+                      <tr key={plat} className="text-slate-300 print:text-slate-900">
+                        <td className="py-2 px-3 font-bold uppercase text-[11px]">{plat}</td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-gold-400 print:text-amber-800">
+                          {aud.visualizaciones.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono text-rose-400 print:text-rose-700">
+                          {aud.interacciones.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono text-sky-400 print:text-sky-700">
+                          {aud.contenidosCompartidos.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-emerald-400 print:text-emerald-700">
+                          +{aud.nuevosSeguidores.toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 4. Detailed Content Breakdown Table with Footer Totals */}
           <div className="space-y-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 print:text-black flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-gold-400 print:text-amber-800" />
