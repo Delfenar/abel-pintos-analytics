@@ -126,13 +126,13 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
         <div className="glass-panel p-5 rounded-3xl border border-gold-400/30 bg-gradient-to-b from-slate-900/90 to-slate-950">
           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
             <Eye className="w-4 h-4 text-gold-400" />
-            Total de Impactos
+            Impacto Total (Streams & Alcance)
           </div>
           <div className="text-2xl sm:text-3xl font-black text-slate-100 font-mono tracking-tight">
             {aggregation.totalImpacts.toLocaleString()}
           </div>
           <div className="text-[11px] text-emerald-400 font-semibold mt-1">
-            Reproducciones + Alcance acumulado
+            Streams + Vistas + Alcance directo filtrado
           </div>
         </div>
 

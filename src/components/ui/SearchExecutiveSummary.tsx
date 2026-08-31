@@ -9,27 +9,29 @@ interface SearchExecutiveSummaryProps {
 }
 
 export const SearchExecutiveSummary: React.FC<SearchExecutiveSummaryProps> = ({ query }) => {
-  const { filteredPlatformDataMap, dateRange, activeCampaign } = useDashboard();
+  const { filteredPlatformDataMap, dateRange, universalSearchAggregation } = useDashboard();
 
-  // Aggregate stats across filtered platform contents
+  // Aggregate stats strictly across filtered platform contents or universal search aggregation
   const allFilteredContent = Object.values(filteredPlatformDataMap)
     .flatMap((p) => p.topContent);
 
-  const totalViewsOrReach = allFilteredContent.reduce((acc, c) => acc + (c.metrics.viewsOrReach || 0), 0);
-  const totalInteractions = allFilteredContent.reduce((acc, c) => acc + (c.metrics.interactions || 0), 0);
+  const totalViewsOrReach = universalSearchAggregation.totalResults > 0
+    ? universalSearchAggregation.totalImpacts
+    : allFilteredContent.reduce((acumulador, item) => {
+        const reproducciones = Number(item.metrics?.viewsOrReach || 0);
+        return acumulador + reproducciones;
+      }, 0);
+
+  const totalInteractions = universalSearchAggregation.totalResults > 0
+    ? universalSearchAggregation.totalInteractions
+    : allFilteredContent.reduce((acc, c) => acc + (c.metrics.interactions || 0), 0);
+
   const avgEngagementRate = totalViewsOrReach > 0
     ? Number(((totalInteractions / totalViewsOrReach) * 100).toFixed(1))
     : 14.5;
 
-  // Group by platform to find top performing platform
-  const platformTotals: Record<string, number> = {};
-  allFilteredContent.forEach(c => {
-    platformTotals[c.platform] = (platformTotals[c.platform] || 0) + (c.metrics.viewsOrReach || 0);
-  });
-
-  const sortedPlatforms = Object.entries(platformTotals).sort((a, b) => b[1] - a[1]);
-  const topPlatformName = sortedPlatforms[0] 
-    ? sortedPlatforms[0][0].charAt(0).toUpperCase() + sortedPlatforms[0][0].slice(1)
+  const topPlatformName = universalSearchAggregation.totalResults > 0
+    ? universalSearchAggregation.topPlatform
     : 'Spotify & YouTube';
 
   // Generate mini trend series for the searched term

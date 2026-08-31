@@ -441,6 +441,23 @@ const GENERIC_EXCLUDED_TERMS = new Set([
   'abel', 'pintos', 'abel pintos', '2026', 'musica', 'cancion', 'single', 'artista', 'oficial'
 ]);
 
+// Exact Calculation helper for Impacto Total (Streams & Alcance)
+export const calcularImpactoTotal = (itemsFiltrados: UniversalRecord[]): number => {
+  return itemsFiltrados.reduce((acumulador, item) => {
+    // Suma únicamente streams, vistas y alcance directo de las publicaciones encontradas
+    const reproducciones = Number(item.metricas?.reproducciones || (item.metricas as any)?.streams || (item.metricas as any)?.views || 0);
+    const alcance = Number(item.metricas?.alcance || (item.metricas as any)?.reach || 0);
+    return acumulador + reproducciones + alcance;
+  }, 0);
+};
+
+// Exact Calculation helper for Interacciones Totales
+export const calcularInteraccionesTotales = (itemsFiltrados: UniversalRecord[]): number => {
+  return itemsFiltrados.reduce((acumulador, item) => {
+    return acumulador + Number(item.metricas?.interacciones || 0);
+  }, 0);
+};
+
 // Universal Relational Search Engine with Strict Filtering
 export const searchUniversalRecords = (
   rawQuery: string,
@@ -448,7 +465,7 @@ export const searchUniversalRecords = (
 ): UniversalSearchAggregation => {
   const query = normalizeSearchQuery(rawQuery);
 
-  // If query is empty, return empty summary
+  // If query is empty, return empty summary with 0 impacts
   if (!query) {
     const emptyCounts: Record<PlatformName, number> = {
       Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
@@ -514,18 +531,13 @@ export const searchUniversalRecords = (
     return titleMatch || tagMatch || campaignMatch || albumMatch || cityMatch;
   });
 
-  // Calculate Aggregations strictly on matched records
+  // Calculate Aggregations strictly on matched records without any baseline channel follower counts
   const platformCounts: Record<PlatformName, number> = {
     Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
   };
   const groupedResults: Record<PlatformName, UniversalRecord[]> = {
     Spotify: [], YouTube: [], Instagram: [], TikTok: [], Facebook: [], X: [], Threads: []
   };
-
-  let totalImpacts = 0;
-  let totalInteractions = 0;
-  let totalSaves = 0;
-  let totalClicks = 0;
 
   const platformImpactTotals: Record<PlatformName, number> = {
     Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
@@ -535,14 +547,14 @@ export const searchUniversalRecords = (
     platformCounts[rec.plataforma] = (platformCounts[rec.plataforma] || 0) + 1;
     groupedResults[rec.plataforma].push(rec);
 
-    const impact = rec.metricas.reproducciones + rec.metricas.alcance;
-    totalImpacts += impact;
-    totalInteractions += rec.metricas.interacciones;
-    totalSaves += rec.metricas.guardados;
-    totalClicks += rec.metricas.clics;
-
+    const impact = Number(rec.metricas?.reproducciones || 0) + Number(rec.metricas?.alcance || 0);
     platformImpactTotals[rec.plataforma] += impact;
   });
+
+  const totalImpacts = calcularImpactoTotal(matchedRecords);
+  const totalInteractions = calcularInteraccionesTotales(matchedRecords);
+  const totalSaves = matchedRecords.reduce((acc, r) => acc + Number(r.metricas?.guardados || 0), 0);
+  const totalClicks = matchedRecords.reduce((acc, r) => acc + Number(r.metricas?.clics || 0), 0);
 
   const sortedPlatforms = (Object.entries(platformImpactTotals) as [PlatformName, number][])
     .sort((a, b) => b[1] - a[1]);
