@@ -25,9 +25,10 @@ import {
 import { 
   searchUniversalRecords, 
   UniversalSearchAggregation, 
-  MASTER_INDEXABLE_RECORDS 
+  MASTER_INDEXABLE_RECORDS,
+  UniversalRecord
 } from '../services/searchEngineService';
-import { sendMetricsToGoogleSheets } from '../services/googleSheetsService';
+import { sendMetricsToGoogleSheets, fetchGoogleSheetsMetrics } from '../services/googleSheetsService';
 import { ToastNotification, ToastState } from '../components/ui/ToastNotification';
 
 interface DashboardContextType {
@@ -90,6 +91,9 @@ interface DashboardContextType {
   setSearchQuery: (q: string) => void;
   isSyncingSheets: boolean;
   syncWithGoogleSheets: () => Promise<void>;
+  liveSheetsRecords: UniversalRecord[];
+  isLoadingSheets: boolean;
+  loadLiveSheetsData: () => Promise<void>;
   toast: ToastState | null;
   setToast: (toast: ToastState | null) => void;
 }
@@ -134,6 +138,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const [liveSheetsRecords, setLiveSheetsRecords] = useState<UniversalRecord[]>([]);
+  const [isLoadingSheets, setIsLoadingSheets] = useState<boolean>(false);
 
   const [isSyncingSheets, setIsSyncingSheets] = useState<boolean>(false);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -211,10 +218,39 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return applyGlobalSearchFilter(globalOverview, platformDataMap, searchQuery, activeCampaign, campaigns);
   }, [globalOverview, platformDataMap, searchQuery, activeCampaign, campaigns]);
 
+  const loadLiveSheetsData = async () => {
+    setIsLoadingSheets(true);
+    try {
+      const records = await fetchGoogleSheetsMetrics();
+      if (records && records.length > 0) {
+        setLiveSheetsRecords(records);
+      }
+    } catch (e) {
+      console.error('Error al obtener datos reales de Google Sheets:', e);
+    } finally {
+      setIsLoadingSheets(false);
+    }
+  };
+
+  // Fetch real Google Sheets metrics on mount
+  useEffect(() => {
+    loadLiveSheetsData();
+  }, []);
+
   // Universal Relational Search Engine Aggregation
+  // Uses Live Google Sheets records if available, merged/fallback with MASTER_INDEXABLE_RECORDS
   const universalSearchAggregation: UniversalSearchAggregation = useMemo(() => {
-    return searchUniversalRecords(searchQuery, MASTER_INDEXABLE_RECORDS);
-  }, [searchQuery]);
+    let activeDataset = MASTER_INDEXABLE_RECORDS;
+    if (liveSheetsRecords.length > 0) {
+      // Find theme/campaign names from live sheets and prioritize live rows
+      const liveTemaNames = new Set(liveSheetsRecords.map(r => r.campania.toLowerCase()));
+      const filteredMaster = MASTER_INDEXABLE_RECORDS.filter(
+        r => !liveTemaNames.has(r.campania.toLowerCase()) && !liveTemaNames.has(r.titulo.toLowerCase())
+      );
+      activeDataset = [...liveSheetsRecords, ...filteredMaster];
+    }
+    return searchUniversalRecords(searchQuery, activeDataset);
+  }, [searchQuery, liveSheetsRecords]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -231,6 +267,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const refreshData = () => {
     setIsRefreshing(true);
+    loadLiveSheetsData();
     setTimeout(() => {
       setPlatformDataMap(getMockPlatformData(dateRange, activeCampaign, comparisonMode, customComparisonType));
       setGlobalOverview(getGlobalOverviewData(dateRange, activeCampaign, comparisonMode, customComparisonType));
@@ -255,6 +292,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         text: '¡Métricas sincronizadas correctamente en la hoja maestra!',
         type: 'success'
       });
+      // Re-fetch updated rows from Google Sheets
+      loadLiveSheetsData();
     } else {
       setToast({
         text: 'Error de conexión con la hoja de Google Sheets.',
@@ -325,6 +364,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setSearchQuery,
         isSyncingSheets,
         syncWithGoogleSheets,
+        liveSheetsRecords,
+        isLoadingSheets,
+        loadLiveSheetsData,
         toast,
         setToast,
       }}

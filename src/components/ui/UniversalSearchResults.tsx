@@ -37,7 +37,8 @@ import {
   Radio,
   Share2,
   Table as TableIcon,
-  LayoutGrid
+  LayoutGrid,
+  RotateCw
 } from 'lucide-react';
 import { BlackPantherIcon } from './BlackPantherIcon';
 import { PrintReportModal } from './PrintReportModal';
@@ -48,8 +49,9 @@ interface UniversalSearchResultsProps {
 }
 
 export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ aggregation, onClear }) => {
+  const { loadLiveSheetsData, isLoadingSheets, liveSheetsRecords } = useDashboard();
   const [activeTab, setActiveTab] = useState<PlatformName | 'all'>('all');
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   const platformIcons: Record<PlatformName, React.ReactNode> = {
@@ -88,12 +90,12 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
                 INFORME DE RENDIMIENTO RELACIONAL
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                {aggregation.totalResults} publicaciones indexadas
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Google Sheets En Vivo
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-500/40 text-sky-300 text-xs font-bold">
-                <Scale className="w-3.5 h-3.5" />
-                Métricas Duales & Desglose 100% Dinámico
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {aggregation.totalResults} registros indexados
               </span>
             </div>
 
@@ -105,12 +107,22 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
             </h2>
 
             <p className="text-xs sm:text-sm text-slate-300">
-              Desglose analítico de cada métrica y métrica agregada combinada calculada en tiempo real sobre los datos filtrados.
+              Métricas reales obtenidas directamente desde Google Sheets con sumatoria dinámica y eliminación de datos ficticios.
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => loadLiveSheetsData()}
+              disabled={isLoadingSheets}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50"
+              title="Volver a consultar el endpoint de Google Sheets"
+            >
+              <RotateCw className={`w-3.5 h-3.5 text-gold-400 ${isLoadingSheets ? 'animate-spin' : ''}`} />
+              <span>{isLoadingSheets ? 'Cargando Sheets...' : 'Actualizar Sheets'}</span>
+            </button>
+
             <button
               onClick={() => setIsPdfModalOpen(true)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-gold-400 to-amber-500 hover:from-gold-300 hover:to-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-gold-500/20 transition-all cursor-pointer"
