@@ -1,4 +1,7 @@
 import React from 'react';
+import { LiveHeader } from '../ui/LiveHeader';
+import { LiveStatCards } from '../ui/LiveStatCards';
+import { LiveDailyPulse } from '../ui/LiveDailyPulse';
 import { ComparativeHeaderBanner } from '../ui/ComparativeHeaderBanner';
 import { useDashboard } from '../../context/DashboardContext';
 import { StatCard } from '../ui/StatCard';
@@ -16,15 +19,10 @@ import {
   YAxis, 
   Tooltip, 
   CartesianGrid, 
-  RadarChart, 
-  Radar, 
-  PolarGrid, 
-  PolarAngleAxis, 
-  PolarRadiusAxis,
-  PieChart,
-  Pie,
-  Cell,
-  ReferenceDot
+  PieChart, 
+  Pie, 
+  Cell, 
+  ReferenceDot 
 } from 'recharts';
 import { Disc, Award, ShieldCheck, Layers, Sparkles, Music2, Users, ArrowRightLeft, Flag, Settings } from 'lucide-react';
 
@@ -70,10 +68,6 @@ export const OverviewView: React.FC = () => {
   }));
 
   const COLORS = ['#1DB954', '#E1306C', '#FF0000', '#1877F2', '#1DA1F2', '#00F2FE', '#000000'];
-
-  const compModeLabel = customComparisonType === 'year_ago'
-    ? 'Mismo periodo año anterior (YoY)'
-    : comparisonMode === 'wow' ? 'Semana a Semana (WoW)' : comparisonMode === 'mom' ? 'Mes a Mes (MoM)' : 'Año a Año (YoY)';
 
   // Custom Dual Tooltip with Absolute vs Percentage Display & Panther Badge
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -147,44 +141,10 @@ export const OverviewView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner - Abel Pintos Official Gold Theme */}
-      <div className="glass-panel-gold p-6 rounded-3xl relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-400/20 border border-gold-400/40 text-gold-300 text-xs font-bold">
-                <BlackPantherIcon size={16} />
-                PANTER LOOK — ABEL PINTOS
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">
-                <ArrowRightLeft className="w-3.5 h-3.5" />
-                {compModeLabel}
-              </span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight">
-              Ecosistema Social & Streaming Unificado
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300/90 max-w-3xl mt-1 leading-relaxed">
-              Monitoreo consolidado en 7 plataformas oficiales. Campaña activa: <strong className="text-gold-300">{currentCampaignInfo.label}</strong>. Rango: <strong className="text-gold-300 uppercase">{dateRange}</strong>.
-            </p>
-          </div>
+      {/* 1. Dynamic Live Header with Real-Time Clock & Pulsing Badge */}
+      <LiveHeader />
 
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="glass-panel px-4 py-2.5 rounded-2xl border-gold-400/30 hover:border-gold-400 text-right transition-all group cursor-pointer"
-            >
-              <div className="flex items-center gap-2 text-xs font-bold text-gold-400 group-hover:text-gold-300">
-                <Settings className="w-4 h-4" />
-                Personalizar Vista
-              </div>
-              <span className="text-[10px] text-slate-400">Fechas, Umbrales & Hitos</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Prominent Search Header Banner when Search is Active */}
+      {/* 2. Prominent Search Header Banner when Search is Active */}
       {searchQuery && (
         <SearchHeaderBanner 
           query={searchQuery} 
@@ -193,15 +153,21 @@ export const OverviewView: React.FC = () => {
         />
       )}
 
-      {/* Dynamic Executive Summary Widget when Search is Active and has matches */}
+      {/* 3. Dynamic Executive Summary Widget when Search is Active and has matches */}
       {searchQuery && hasMatches && (
         <SearchExecutiveSummary query={searchQuery} />
       )}
 
-      {/* Dynamic Comparative Header Banner */}
+      {/* 4. Live Moment Sampling Stat Cards (Audiencia 17.4M+, Spotify, YouTube, IG, TikTok, FB, X, Threads) */}
+      <LiveStatCards />
+
+      {/* 5. 24h Daily Pulse (Hourly Streams/Interactions) & Live Featured Content Feed */}
+      <LiveDailyPulse />
+
+      {/* 6. Dynamic Comparative Header Banner */}
       <ComparativeHeaderBanner />
 
-      {/* Empty State vs Normal Dashboard Content */}
+      {/* Empty State vs Normal Dashboard Detailed Evolution Content */}
       {!hasMatches ? (
         <SearchEmptyState 
           query={searchQuery} 
@@ -210,56 +176,6 @@ export const OverviewView: React.FC = () => {
         />
       ) : (
         <>
-          {/* Global Stat Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              id="totalReach"
-              label={filteredOverview.totalReach.label}
-              value={filteredOverview.totalReach.value}
-              previousWeekValue={filteredOverview.totalReach.previousWeekValue}
-              previousMonthValue={filteredOverview.totalReach.previousMonthValue}
-              previousYearValue={filteredOverview.totalReach.previousYearValue}
-              sparkline={filteredOverview.totalReach.sparkline}
-              brandColor="#D4AF37"
-              description="Alcance consolidado único en todas las plataformas oficiales de Abel Pintos."
-            />
-            <StatCard
-              id="totalImpressions"
-              label={filteredOverview.totalImpressions.label}
-              value={filteredOverview.totalImpressions.value}
-              previousWeekValue={filteredOverview.totalImpressions.previousWeekValue}
-              previousMonthValue={filteredOverview.totalImpressions.previousMonthValue}
-              previousYearValue={filteredOverview.totalImpressions.previousYearValue}
-              sparkline={filteredOverview.totalImpressions.sparkline}
-              brandColor="#C5A059"
-              description="Suma total de streams en Spotify y reproducciones de video/posts."
-            />
-            <StatCard
-              id="avgEngagementRate"
-              label={filteredOverview.avgEngagementRate.label}
-              value={filteredOverview.avgEngagementRate.value}
-              previousWeekValue={filteredOverview.avgEngagementRate.previousWeekValue}
-              previousMonthValue={filteredOverview.avgEngagementRate.previousMonthValue}
-              previousYearValue={filteredOverview.avgEngagementRate.previousYearValue}
-              unit="%"
-              format="percent"
-              brandColor="#10B981"
-              status={filteredOverview.avgEngagementRate.status}
-              description="Engagement rate medio de la comunidad activa de fans."
-            />
-            <StatCard
-              id="totalFollowers"
-              label={filteredOverview.totalFollowers.label}
-              value={filteredOverview.totalFollowers.value}
-              previousWeekValue={filteredOverview.totalFollowers.previousWeekValue}
-              previousMonthValue={filteredOverview.totalFollowers.previousMonthValue}
-              previousYearValue={filteredOverview.totalFollowers.previousYearValue}
-              sparkline={filteredOverview.totalFollowers.sparkline}
-              brandColor="#E1306C"
-              description="Seguidores directos agregados en redes y suscriptores de YouTube."
-            />
-          </div>
-
           {/* Main Evolution Timeline Chart with Panther Face Markers */}
           <div className="glass-panel p-6 rounded-3xl">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -351,7 +267,7 @@ export const OverviewView: React.FC = () => {
 
           {/* Distribution and Performance Breakdown Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Pie Chart: Distribution by Network with Crisp White Hover Text */}
+            {/* Pie Chart: Distribution by Network */}
             <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between">
               <div>
                 <h3 className="text-lg font-black text-slate-100 mb-1">
