@@ -26,6 +26,26 @@ export interface UniversalRecord {
   relevanceScore?: number;
 }
 
+export interface PlatformDualMetric {
+  filteredImpact: number;
+  globalImpact: number;
+  sharePercent: number;
+  filteredInteractions: number;
+  globalInteractions: number;
+  filteredCount: number;
+  globalCount: number;
+}
+
+export interface DualMetricsCalculation {
+  filteredImpact: number; // Impacto exclusivo del término/tema filtrado
+  globalBenchmarkImpact: number; // Impacto total global en el periodo
+  shareOfVoice: number; // Porcentaje de contribución ((filteredImpact / globalBenchmarkImpact) * 100)
+  filteredInteractions: number;
+  globalInteractions: number;
+  interactionsShare: number;
+  platformBreakdowns: Record<PlatformName, PlatformDualMetric>;
+}
+
 export interface UniversalSearchAggregation {
   query: string;
   totalResults: number;
@@ -37,6 +57,7 @@ export interface UniversalSearchAggregation {
   platformCounts: Record<PlatformName, number>;
   groupedResults: Record<PlatformName, UniversalRecord[]>;
   allResults: UniversalRecord[];
+  dualMetrics: DualMetricsCalculation;
 }
 
 // Master Indexable Universal Dataset for Abel Pintos (Strictly Segregated by Song/Campaign)
@@ -474,6 +495,16 @@ export const searchUniversalRecords = (
       Spotify: [], YouTube: [], Instagram: [], TikTok: [], Facebook: [], X: [], Threads: []
     };
 
+    const emptyPlatformBreakdowns: Record<PlatformName, PlatformDualMetric> = {
+      Spotify: { filteredImpact: 0, globalImpact: 0, sharePercent: 0, filteredInteractions: 0, globalInteractions: 0, filteredCount: 0, globalCount: 0 },
+      YouTube: { filteredImpact: 0, globalImpact: 0, sharePercent: 0, filteredInteractions: 0, globalInteractions: 0, filteredCount: 0, globalCount: 0 },
+      Instagram: { filteredImpact: 0, globalImpact: 0, sharePercent: 0, filteredInteractions: 0, globalInteractions: 0, filteredCount: 0, globalCount: 0 },
+      TikTok: { filteredImpact: 0, globalImpact: 0, sharePercent: 0, filteredInteractions: 0, globalInteractions: 0, filteredCount: 0, globalCount: 0 },
+      Facebook: { filteredImpact: 0, globalImpact: 0, sharePercent: 0, filteredInteractions: 0, globalInteractions: 0, filteredCount: 0, globalCount: 0 },
+      X: { filteredImpact: 0, globalImpact: 0, sharePercent: 0, filteredInteractions: 0, globalInteractions: 0, filteredCount: 0, globalCount: 0 },
+      Threads: { filteredImpact: 0, globalImpact: 0, sharePercent: 0, filteredInteractions: 0, globalInteractions: 0, filteredCount: 0, globalCount: 0 }
+    };
+
     return {
       query: '',
       totalResults: 0,
@@ -484,7 +515,16 @@ export const searchUniversalRecords = (
       topPlatform: 'Spotify',
       platformCounts: emptyCounts,
       groupedResults: emptyGrouped,
-      allResults: []
+      allResults: [],
+      dualMetrics: {
+        filteredImpact: 0,
+        globalBenchmarkImpact: 0,
+        shareOfVoice: 0,
+        filteredInteractions: 0,
+        globalInteractions: 0,
+        interactionsShare: 0,
+        platformBreakdowns: emptyPlatformBreakdowns
+      }
     };
   }
 
@@ -560,6 +600,132 @@ export const searchUniversalRecords = (
     .sort((a, b) => b[1] - a[1]);
   const topPlatform: PlatformName = sortedPlatforms[0] && sortedPlatforms[0][1] > 0 ? sortedPlatforms[0][0] : 'Spotify';
 
+  // Global Benchmark Totals across all master records
+  const globalPlatformImpactTotals: Record<PlatformName, number> = {
+    Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
+  };
+  const globalPlatformInteractionTotals: Record<PlatformName, number> = {
+    Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
+  };
+  const globalPlatformCounts: Record<PlatformName, number> = {
+    Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
+  };
+
+  let globalBenchmarkImpact = 0;
+  let globalInteractions = 0;
+
+  records.forEach(rec => {
+    const impact = Number(rec.metricas?.reproducciones || 0) + Number(rec.metricas?.alcance || 0);
+    const interactions = Number(rec.metricas?.interacciones || 0);
+
+    globalPlatformImpactTotals[rec.plataforma] += impact;
+    globalPlatformInteractionTotals[rec.plataforma] += interactions;
+    globalPlatformCounts[rec.plataforma] += 1;
+
+    globalBenchmarkImpact += impact;
+    globalInteractions += interactions;
+  });
+
+  // Calculate Share of Voice (%)
+  const shareOfVoice = globalBenchmarkImpact > 0
+    ? Number(((totalImpacts / globalBenchmarkImpact) * 100).toFixed(1))
+    : 0;
+
+  const interactionsShare = globalInteractions > 0
+    ? Number(((totalInteractions / globalInteractions) * 100).toFixed(1))
+    : 0;
+
+  // Platform by Platform Dual Metrics
+  const platformBreakdowns: Record<PlatformName, PlatformDualMetric> = {
+    Spotify: {
+      filteredImpact: platformImpactTotals.Spotify,
+      globalImpact: globalPlatformImpactTotals.Spotify,
+      sharePercent: globalPlatformImpactTotals.Spotify > 0 
+        ? Number(((platformImpactTotals.Spotify / globalPlatformImpactTotals.Spotify) * 100).toFixed(1))
+        : 0,
+      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'Spotify').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      globalInteractions: globalPlatformInteractionTotals.Spotify,
+      filteredCount: platformCounts.Spotify,
+      globalCount: globalPlatformCounts.Spotify
+    },
+    YouTube: {
+      filteredImpact: platformImpactTotals.YouTube,
+      globalImpact: globalPlatformImpactTotals.YouTube,
+      sharePercent: globalPlatformImpactTotals.YouTube > 0 
+        ? Number(((platformImpactTotals.YouTube / globalPlatformImpactTotals.YouTube) * 100).toFixed(1))
+        : 0,
+      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'YouTube').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      globalInteractions: globalPlatformInteractionTotals.YouTube,
+      filteredCount: platformCounts.YouTube,
+      globalCount: globalPlatformCounts.YouTube
+    },
+    Instagram: {
+      filteredImpact: platformImpactTotals.Instagram,
+      globalImpact: globalPlatformImpactTotals.Instagram,
+      sharePercent: globalPlatformImpactTotals.Instagram > 0 
+        ? Number(((platformImpactTotals.Instagram / globalPlatformImpactTotals.Instagram) * 100).toFixed(1))
+        : 0,
+      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'Instagram').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      globalInteractions: globalPlatformInteractionTotals.Instagram,
+      filteredCount: platformCounts.Instagram,
+      globalCount: globalPlatformCounts.Instagram
+    },
+    TikTok: {
+      filteredImpact: platformImpactTotals.TikTok,
+      globalImpact: globalPlatformImpactTotals.TikTok,
+      sharePercent: globalPlatformImpactTotals.TikTok > 0 
+        ? Number(((platformImpactTotals.TikTok / globalPlatformImpactTotals.TikTok) * 100).toFixed(1))
+        : 0,
+      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'TikTok').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      globalInteractions: globalPlatformInteractionTotals.TikTok,
+      filteredCount: platformCounts.TikTok,
+      globalCount: globalPlatformCounts.TikTok
+    },
+    Facebook: {
+      filteredImpact: platformImpactTotals.Facebook,
+      globalImpact: globalPlatformImpactTotals.Facebook,
+      sharePercent: globalPlatformImpactTotals.Facebook > 0 
+        ? Number(((platformImpactTotals.Facebook / globalPlatformImpactTotals.Facebook) * 100).toFixed(1))
+        : 0,
+      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'Facebook').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      globalInteractions: globalPlatformInteractionTotals.Facebook,
+      filteredCount: platformCounts.Facebook,
+      globalCount: globalPlatformCounts.Facebook
+    },
+    X: {
+      filteredImpact: platformImpactTotals.X,
+      globalImpact: globalPlatformImpactTotals.X,
+      sharePercent: globalPlatformImpactTotals.X > 0 
+        ? Number(((platformImpactTotals.X / globalPlatformImpactTotals.X) * 100).toFixed(1))
+        : 0,
+      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'X').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      globalInteractions: globalPlatformInteractionTotals.X,
+      filteredCount: platformCounts.X,
+      globalCount: globalPlatformCounts.X
+    },
+    Threads: {
+      filteredImpact: platformImpactTotals.Threads,
+      globalImpact: globalPlatformImpactTotals.Threads,
+      sharePercent: globalPlatformImpactTotals.Threads > 0 
+        ? Number(((platformImpactTotals.Threads / globalPlatformImpactTotals.Threads) * 100).toFixed(1))
+        : 0,
+      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'Threads').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      globalInteractions: globalPlatformInteractionTotals.Threads,
+      filteredCount: platformCounts.Threads,
+      globalCount: globalPlatformCounts.Threads
+    }
+  };
+
+  const dualMetrics: DualMetricsCalculation = {
+    filteredImpact: totalImpacts,
+    globalBenchmarkImpact,
+    shareOfVoice,
+    filteredInteractions: totalInteractions,
+    globalInteractions,
+    interactionsShare,
+    platformBreakdowns
+  };
+
   return {
     query: rawQuery,
     totalResults: matchedRecords.length,
@@ -570,6 +736,7 @@ export const searchUniversalRecords = (
     topPlatform,
     platformCounts,
     groupedResults,
-    allResults: matchedRecords
+    allResults: matchedRecords,
+    dualMetrics
   };
 };
