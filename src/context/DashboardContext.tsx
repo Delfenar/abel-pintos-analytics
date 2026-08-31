@@ -21,6 +21,11 @@ import {
   applyGlobalSearchFilter,
   GlobalSearchResult
 } from '../services/mockDataService';
+import { 
+  searchUniversalRecords, 
+  UniversalSearchAggregation, 
+  MASTER_INDEXABLE_RECORDS 
+} from '../services/searchEngineService';
 import { sendMetricsToGoogleSheets } from '../services/googleSheetsService';
 import { ToastNotification, ToastState } from '../components/ui/ToastNotification';
 
@@ -67,6 +72,7 @@ interface DashboardContextType {
   filteredOverview: GlobalOverviewData;
   matchedContentCount: number;
   hasMatches: boolean;
+  universalSearchAggregation: UniversalSearchAggregation;
   apiSamples: ApiPayloadSample[];
   refreshData: () => void;
   isRefreshing: boolean;
@@ -160,6 +166,11 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return applyGlobalSearchFilter(globalOverview, platformDataMap, searchQuery, activeCampaign, campaigns);
   }, [globalOverview, platformDataMap, searchQuery, activeCampaign, campaigns]);
 
+  // Universal Relational Search Engine Aggregation
+  const universalSearchAggregation: UniversalSearchAggregation = useMemo(() => {
+    return searchUniversalRecords(searchQuery, MASTER_INDEXABLE_RECORDS);
+  }, [searchQuery]);
+
   useEffect(() => {
     const root = document.documentElement;
     if (isDarkMode) {
@@ -252,6 +263,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         filteredOverview: searchResult.filteredOverview,
         matchedContentCount: searchResult.matchedCount,
         hasMatches: searchResult.hasMatches,
+        universalSearchAggregation,
         apiSamples,
         refreshData,
         isRefreshing,

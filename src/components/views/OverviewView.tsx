@@ -3,12 +3,11 @@ import { LiveHeader } from '../ui/LiveHeader';
 import { LiveStatCards } from '../ui/LiveStatCards';
 import { LiveDailyPulse } from '../ui/LiveDailyPulse';
 import { ComparativeHeaderBanner } from '../ui/ComparativeHeaderBanner';
+import { UniversalSearchResults } from '../ui/UniversalSearchResults';
+import { SearchEmptyState } from '../ui/SearchEmptyState';
 import { useDashboard } from '../../context/DashboardContext';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
-import { SearchHeaderBanner } from '../ui/SearchHeaderBanner';
-import { SearchExecutiveSummary } from '../ui/SearchExecutiveSummary';
-import { SearchEmptyState } from '../ui/SearchEmptyState';
 import { CAMPAIGNS } from '../../services/mockDataService';
 import { BlackPantherIcon } from '../ui/BlackPantherIcon';
 import { 
@@ -42,10 +41,9 @@ export const OverviewView: React.FC = () => {
   const { 
     filteredOverview, 
     filteredPlatformDataMap, 
-    matchedContentCount,
-    hasMatches,
     searchQuery,
     setSearchQuery,
+    universalSearchAggregation,
     dateRange, 
     activeCampaign, 
     comparisonMode,
@@ -139,197 +137,195 @@ export const OverviewView: React.FC = () => {
     return null;
   };
 
+  // If a search query is active, render Universal Search Results or Empty State
+  if (searchQuery && searchQuery.trim()) {
+    if (universalSearchAggregation.totalResults === 0) {
+      return (
+        <div className="space-y-6">
+          <SearchEmptyState 
+            query={searchQuery} 
+            onReset={() => setSearchQuery('')}
+            onSuggestionClick={(suggestion) => setSearchQuery(suggestion)}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <UniversalSearchResults
+        aggregation={universalSearchAggregation}
+        onClear={() => setSearchQuery('')}
+      />
+    );
+  }
+
+  // Default Home Screen: Live Real-Time Control Panel & Consolidated Overview
   return (
     <div className="space-y-6">
       {/* 1. Dynamic Live Header with Real-Time Clock & Pulsing Badge */}
       <LiveHeader />
 
-      {/* 2. Prominent Search Header Banner when Search is Active */}
-      {searchQuery && (
-        <SearchHeaderBanner 
-          query={searchQuery} 
-          matchedCount={matchedContentCount} 
-          onClear={() => setSearchQuery('')} 
-        />
-      )}
-
-      {/* 3. Dynamic Executive Summary Widget when Search is Active and has matches */}
-      {searchQuery && hasMatches && (
-        <SearchExecutiveSummary query={searchQuery} />
-      )}
-
-      {/* 4. Live Moment Sampling Stat Cards (Audiencia 17.4M+, Spotify, YouTube, IG, TikTok, FB, X, Threads) */}
+      {/* 2. Live Moment Sampling Stat Cards (Audiencia 17.4M+, Spotify, YouTube, IG, TikTok, FB, X, Threads) */}
       <LiveStatCards />
 
-      {/* 5. 24h Daily Pulse (Hourly Streams/Interactions) & Live Featured Content Feed */}
+      {/* 3. 24h Daily Pulse (Hourly Streams/Interactions) & Live Featured Content Feed */}
       <LiveDailyPulse />
 
-      {/* 6. Dynamic Comparative Header Banner */}
+      {/* 4. Dynamic Comparative Header Banner */}
       <ComparativeHeaderBanner />
 
-      {/* Empty State vs Normal Dashboard Detailed Evolution Content */}
-      {!hasMatches ? (
-        <SearchEmptyState 
-          query={searchQuery} 
-          onReset={() => setSearchQuery('')}
-          onSuggestionClick={(suggestion) => setSearchQuery(suggestion)}
-        />
-      ) : (
-        <>
-          {/* Main Evolution Timeline Chart with Panther Face Markers */}
-          <div className="glass-panel p-6 rounded-3xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <div>
-                <h3 className="text-lg font-black text-slate-100 flex items-center gap-2">
-                  <BlackPantherIcon size={20} />
-                  Evolución Multicanal & Hitos Clave
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Contrastando Periodo Actual vs. Periodo Comparativo con marcadores de hitos oficiales.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-4 text-xs font-semibold">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gold-400 shadow-sm shadow-gold-500/50" />
-                  <span className="text-slate-200">Periodo Actual</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-0.5 border-b-2 border-dashed border-slate-500" />
-                  <span className="text-slate-400">Comparativo</span>
-                </div>
-                {showMilestones && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gold-400/10 border border-gold-400/30 text-gold-300">
-                    <BlackPantherIcon size={14} />
-                    <span>Hitos Activos</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={filteredOverview.multiPlatformTimeSeries} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="goldAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#D4AF37" stopOpacity={0.0} />
-                    </linearGradient>
-                    <linearGradient id="compAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#64748B" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#64748B" stopOpacity={0.0} />
-                    </linearGradient>
-                  </defs>
-
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
-                  <XAxis dataKey="date" stroke="#64748B" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#64748B" fontSize={11} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip content={<CustomTooltip />} />
-
-                  <Area
-                    type="monotone"
-                    dataKey="comparison"
-                    name="Periodo Anterior"
-                    stroke="#64748B"
-                    strokeWidth={2}
-                    strokeDasharray="4 4"
-                    fillOpacity={1}
-                    fill="url(#compAreaGrad)"
-                  />
-
-                  <Area
-                    type="monotone"
-                    dataKey="current"
-                    name="Periodo Actual"
-                    stroke="#D4AF37"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#goldAreaGrad)"
-                  />
-
-                  {/* Render Panther Face Marker Dots on Milestone Days */}
-                  {showMilestones && filteredOverview.milestones.map((ms) => {
-                    const matchedPoint = filteredOverview.multiPlatformTimeSeries.find(p => p.date === ms.date);
-                    if (!matchedPoint) return null;
-                    return (
-                      <ReferenceDot
-                        key={ms.id}
-                        x={ms.date}
-                        y={matchedPoint.current}
-                        shape={<PantherMarkerDot />}
-                      />
-                    );
-                  })}
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+      {/* 5. Main Evolution Timeline Chart with Panther Face Markers */}
+      <div className="glass-panel p-6 rounded-3xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h3 className="text-lg font-black text-slate-100 flex items-center gap-2">
+              <BlackPantherIcon size={20} />
+              Evolución Multicanal & Hitos Clave
+            </h3>
+            <p className="text-xs text-slate-400">
+              Contrastando Periodo Actual vs. Periodo Comparativo con marcadores de hitos oficiales.
+            </p>
           </div>
 
-          {/* Distribution and Performance Breakdown Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Pie Chart: Distribution by Network */}
-            <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between">
-              <div>
-                <h3 className="text-lg font-black text-slate-100 mb-1">
-                  Distribución de Audiencia por Canal
-                </h3>
-                <p className="text-xs text-slate-400 mb-4">
-                  Cuota de impacto relativo en la comunidad digital de Abel Pintos.
-                </p>
-              </div>
-
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={85}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#090D16',
-                        borderColor: '#D4AF37',
-                        borderRadius: '1rem',
-                        color: '#FFFFFF',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-                      }}
-                      itemStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
-                      labelStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
-                      formatter={(val: any) => [`${Number(val).toLocaleString()} cuentas`, 'Alcance']}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-slate-800">
-                {pieData.map((item, idx) => (
-                  <div key={item.name} className="flex items-center gap-1.5 text-[11px] text-slate-300">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                    <span>{item.name}</span>
-                  </div>
-                ))}
-              </div>
+          <div className="flex items-center gap-4 text-xs font-semibold">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-gold-400 shadow-sm shadow-gold-500/50" />
+              <span className="text-slate-200">Periodo Actual</span>
             </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-0.5 border-b-2 border-dashed border-slate-500" />
+              <span className="text-slate-400">Comparativo</span>
+            </div>
+            {showMilestones && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gold-400/10 border border-gold-400/30 text-gold-300">
+                <BlackPantherIcon size={14} />
+                <span>Hitos Activos</span>
+              </div>
+            )}
+          </div>
+        </div>
 
-            {/* Top Content Breakdown Table */}
-            <div className="lg:col-span-2">
-              <ContentTable
-                title={searchQuery ? `Contenido Filtrado para "${searchQuery}"` : 'Contenido Destacado del Artista'}
-                items={allTopContent}
+        <div className="h-80 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={filteredOverview.multiPlatformTimeSeries} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="goldAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#D4AF37" stopOpacity={0.0} />
+                </linearGradient>
+                <linearGradient id="compAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#64748B" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#64748B" stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
+
+              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
+              <XAxis dataKey="date" stroke="#64748B" fontSize={11} tickLine={false} />
+              <YAxis stroke="#64748B" fontSize={11} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+              <Tooltip content={<CustomTooltip />} />
+
+              <Area
+                type="monotone"
+                dataKey="comparison"
+                name="Periodo Anterior"
+                stroke="#64748B"
+                strokeWidth={2}
+                strokeDasharray="4 4"
+                fillOpacity={1}
+                fill="url(#compAreaGrad)"
               />
-            </div>
+
+              <Area
+                type="monotone"
+                dataKey="current"
+                name="Periodo Actual"
+                stroke="#D4AF37"
+                strokeWidth={3}
+                fillOpacity={1}
+                fill="url(#goldAreaGrad)"
+              />
+
+              {/* Render Panther Face Marker Dots on Milestone Days */}
+              {showMilestones && filteredOverview.milestones.map((ms) => {
+                const matchedPoint = filteredOverview.multiPlatformTimeSeries.find(p => p.date === ms.date);
+                if (!matchedPoint) return null;
+                return (
+                  <ReferenceDot
+                    key={ms.id}
+                    x={ms.date}
+                    y={matchedPoint.current}
+                    shape={<PantherMarkerDot />}
+                  />
+                );
+              })}
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* 6. Distribution and Performance Breakdown Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Pie Chart: Distribution by Network */}
+        <div className="glass-panel p-6 rounded-3xl flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-black text-slate-100 mb-1">
+              Distribución de Audiencia por Canal
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">
+              Cuota de impacto relativo en la comunidad digital de Abel Pintos.
+            </p>
           </div>
-        </>
-      )}
+
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={85}
+                  paddingAngle={4}
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#090D16',
+                    borderColor: '#D4AF37',
+                    borderRadius: '1rem',
+                    color: '#FFFFFF',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+                  }}
+                  itemStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
+                  labelStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
+                  formatter={(val: any) => [`${Number(val).toLocaleString()} cuentas`, 'Alcance']}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-slate-800">
+            {pieData.map((item, idx) => (
+              <div key={item.name} className="flex items-center gap-1.5 text-[11px] text-slate-300">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                <span>{item.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Top Content Breakdown Table */}
+        <div className="lg:col-span-2">
+          <ContentTable
+            title="Contenido Destacado del Artista"
+            items={allTopContent}
+          />
+        </div>
+      </div>
     </div>
   );
 };
