@@ -1,6 +1,8 @@
 export type PlatformId = 'overview' | 'instagram' | 'threads' | 'tiktok' | 'facebook' | 'twitter' | 'youtube' | 'spotify' | 'simulator';
 
-export type DateRangeKey = '7d' | '28d' | '90d' | '1y' | 'custom';
+export type DateRangeKey = '1d' | '7d' | '28d' | '90d' | '1y' | 'custom';
+
+export type SingleDayCompType = 'dod' | 'same_day_last_week' | 'none';
 
 export type ComparisonMode = 'wow' | 'mom' | 'yoy';
 

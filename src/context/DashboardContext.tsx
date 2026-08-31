@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { 
   PlatformId, 
   DateRangeKey, 
+  SingleDayCompType,
   ComparisonMode, 
   CustomComparisonType,
   DisplayValueType,
@@ -34,6 +35,15 @@ interface DashboardContextType {
   setActiveView: (view: PlatformId) => void;
   dateRange: DateRangeKey;
   setDateRange: (range: DateRangeKey) => void;
+  selectedSingleDay: string;
+  setSelectedSingleDay: (day: string) => void;
+  singleDayCompType: SingleDayCompType;
+  setSingleDayCompType: (type: SingleDayCompType) => void;
+  goToPreviousDay: () => void;
+  goToNextDay: () => void;
+  goToToday: () => void;
+  goToYesterday: () => void;
+  goToLaunchDay: () => void;
   comparisonMode: ComparisonMode;
   setComparisonMode: (mode: ComparisonMode) => void;
   customComparisonType: CustomComparisonType;
@@ -89,6 +99,9 @@ const DashboardContext = createContext<DashboardContextType | undefined>(undefin
 export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeView, setActiveView] = useState<PlatformId>('overview');
   const [dateRange, setDateRange] = useState<DateRangeKey>('28d');
+  const [selectedSingleDay, setSelectedSingleDay] = useState<string>('2026-08-31');
+  const [singleDayCompType, setSingleDayCompType] = useState<SingleDayCompType>('dod');
+
   const [comparisonMode, setComparisonMode] = useState<ComparisonMode>('mom');
   const [customComparisonType, setCustomComparisonType] = useState<CustomComparisonType>('previous_period');
   const [activeCampaign, setActiveCampaign] = useState<CampaignId>('all');
@@ -124,6 +137,38 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const [isSyncingSheets, setIsSyncingSheets] = useState<boolean>(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+
+  // Single Day Navigation Helpers
+  const goToPreviousDay = () => {
+    const current = new Date(selectedSingleDay + 'T12:00:00');
+    current.setDate(current.getDate() - 1);
+    const newDateStr = current.toISOString().split('T')[0];
+    setSelectedSingleDay(newDateStr);
+    setDateRange('1d');
+  };
+
+  const goToNextDay = () => {
+    const current = new Date(selectedSingleDay + 'T12:00:00');
+    current.setDate(current.getDate() + 1);
+    const newDateStr = current.toISOString().split('T')[0];
+    setSelectedSingleDay(newDateStr);
+    setDateRange('1d');
+  };
+
+  const goToToday = () => {
+    setSelectedSingleDay('2026-08-31');
+    setDateRange('1d');
+  };
+
+  const goToYesterday = () => {
+    setSelectedSingleDay('2026-08-30');
+    setDateRange('1d');
+  };
+
+  const goToLaunchDay = () => {
+    setSelectedSingleDay('2026-08-27');
+    setDateRange('1d');
+  };
 
   const addCampaign = (newCamp: CampaignFilter) => {
     setCampaigns(prev => {
@@ -225,6 +270,15 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setActiveView,
         dateRange,
         setDateRange,
+        selectedSingleDay,
+        setSelectedSingleDay,
+        singleDayCompType,
+        setSingleDayCompType,
+        goToPreviousDay,
+        goToNextDay,
+        goToToday,
+        goToYesterday,
+        goToLaunchDay,
         comparisonMode,
         setComparisonMode,
         customComparisonType,

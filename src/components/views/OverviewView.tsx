@@ -24,6 +24,7 @@ import {
   ReferenceDot 
 } from 'recharts';
 import { Disc, Award, ShieldCheck, Layers, Sparkles, Music2, Users, ArrowRightLeft, Flag, Settings } from 'lucide-react';
+import { SingleDayView } from './SingleDayView';
 
 // Custom Panther Face Marker Dot for Recharts Graphs
 const PantherMarkerDot = (props: any) => {
@@ -157,6 +158,11 @@ export const OverviewView: React.FC = () => {
         onClear={() => setSearchQuery('')}
       />
     );
+  }
+
+  // If Single Day View mode is active, render SingleDayView
+  if (dateRange === '1d') {
+    return <SingleDayView />;
   }
 
   // Default Home Screen: Live Real-Time Control Panel & Consolidated Overview

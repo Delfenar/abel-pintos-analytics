@@ -238,17 +238,17 @@ export const Header: React.FC = () => {
             <div className="flex items-center bg-slate-900/90 border border-slate-800 rounded-xl p-1 text-xs">
               <Calendar className="w-3.5 h-3.5 text-gold-400 ml-2 mr-1" />
               <div className="flex items-center gap-1">
-                {(['7d', '28d', '90d', '1y', 'custom'] as DateRangeKey[]).map((r) => (
+                {(['1d', '7d', '28d', '90d', '1y', 'custom'] as DateRangeKey[]).map((r) => (
                   <button
                     key={r}
                     onClick={() => setDateRange(r)}
-                    className={`px-2 py-1 rounded-lg font-semibold transition-all ${
+                    className={`px-2 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
                       dateRange === r
                         ? 'bg-gold-400 text-slate-950 font-bold shadow-sm'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                     }`}
                   >
-                    {r === '7d' ? '7D' : r === '28d' ? '28D' : r === '90d' ? '90D' : r === '1y' ? '1A' : 'Pers.'}
+                    {r === '1d' ? 'Día' : r === '7d' ? '7D' : r === '28d' ? '28D' : r === '90d' ? '90D' : r === '1y' ? '1A' : 'Pers.'}
                   </button>
                 ))}
               </div>
