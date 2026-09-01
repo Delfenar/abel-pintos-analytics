@@ -4,12 +4,21 @@ import { Search, X, Music2, MapPin, Sparkles, Layers, TrendingUp } from 'lucide-
 import { BlackPantherIcon } from './BlackPantherIcon';
 
 export const GlobalSearch: React.FC = () => {
-  const { searchQuery, setSearchQuery } = useDashboard();
+  const { searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const [isFocused, setIsFocused] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const songChips = ['Oncemil', 'Motivos', 'Sin Principio Ni Final', 'Piedra Libre', 'Alta en el Cielo'];
-  const campaignChips = ['Gira 30 Años', 'Rosario', 'Buenos Aires', 'Lanzamiento Libro', 'Streaming 2026'];
+  // Dynamic campaigns extracted strictly from unique 'Tema_Campania' in Google Sheets
+  const rawCampaigns = [...new Set(liveSheetsRecords.map(item => item.campania).filter(Boolean))];
+  const campaignChips = rawCampaigns.length > 0 ? rawCampaigns : ['Ibuprofeno', 'BUENAVENTURA TOUR 2026'];
+
+  // Dynamic song titles / releases present in Google Sheets
+  const rawSongChips = [...new Set(
+    liveSheetsRecords
+      .map(item => item.titulo.split('-')[0]?.trim() || item.campania)
+      .filter(Boolean)
+  )];
+  const songChips = rawSongChips.length > 0 ? rawSongChips.slice(0, 5) : ['Ibuprofeno'];
 
   // Handle outside click to close suggestions dropdown
   useEffect(() => {
@@ -48,7 +57,7 @@ export const GlobalSearch: React.FC = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
-          placeholder="Buscar campaña, canción (ej. Oncemil, Motivos), ciudad o palabra clave..."
+          placeholder="Buscar campaña, canción (ej. Ibuprofeno, Buenaventura)..."
           className="w-full bg-transparent pl-3 pr-9 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none"
         />
 
@@ -69,42 +78,16 @@ export const GlobalSearch: React.FC = () => {
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-gold-400 flex items-center gap-1.5">
               <BlackPantherIcon size={14} />
-              Sugerencias Rápidas
+              Sugerencias Dinámicas (Google Sheets)
             </span>
             <span className="text-[10px] text-slate-400 font-medium">Click para filtrar</span>
           </div>
 
-          {/* Songs Section */}
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-1.5">
-              <Music2 className="w-3 h-3 text-gold-400" />
-              Canciones Populares:
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {songChips.map((song) => (
-                <button
-                  key={song}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleSelectTag(song);
-                  }}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
-                    searchQuery.toLowerCase() === song.toLowerCase()
-                      ? 'bg-gold-400 text-slate-950 border-gold-400 font-bold'
-                      : 'bg-slate-900/90 text-gold-300 border-gold-400/30 hover:border-gold-400 hover:bg-gold-400/10'
-                  }`}
-                >
-                  🎵 {song}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Campaigns / Cities Section */}
+          {/* Campaigns from Google Sheets */}
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-1.5">
               <MapPin className="w-3 h-3 text-amber-400" />
-              Campañas & Ciudades:
+              Campañas en Hoja Maestra ({campaignChips.length}):
             </span>
             <div className="flex flex-wrap gap-1.5">
               {campaignChips.map((camp) => (
@@ -121,6 +104,32 @@ export const GlobalSearch: React.FC = () => {
                   }`}
                 >
                   🎯 {camp}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Track / Release Titles */}
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-1.5">
+              <Music2 className="w-3 h-3 text-gold-400" />
+              Lanzamientos Indexados:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {songChips.map((song) => (
+                <button
+                  key={song}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelectTag(song);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                    searchQuery.toLowerCase() === song.toLowerCase()
+                      ? 'bg-gold-400 text-slate-950 border-gold-400 font-bold'
+                      : 'bg-slate-900/90 text-gold-300 border-gold-400/30 hover:border-gold-400 hover:bg-gold-400/10'
+                  }`}
+                >
+                  🎵 {song}
                 </button>
               ))}
             </div>

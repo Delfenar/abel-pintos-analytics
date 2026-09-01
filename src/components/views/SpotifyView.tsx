@@ -5,10 +5,34 @@ import { ContentTable } from '../ui/ContentTable';
 import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Music, Radio, Bookmark, ListPlus, UserCheck, HeadphoneIcon, Disc, Flame } from 'lucide-react';
+import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 
 export const SpotifyView: React.FC = () => {
-  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
+  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.spotify || platformDataMap.spotify;
+
+  const spotifyContent = React.useMemo(() => {
+    const liveItems = liveSheetsRecords.filter(r => r.plataforma === 'Spotify');
+    if (liveItems.length > 0) {
+      return liveItems.map(r => ({
+        id: r.id,
+        platform: 'spotify' as const,
+        title: r.titulo,
+        type: r.tipoContenido,
+        campaignId: r.campania.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+        publishedAt: r.fecha,
+        url: r.enlacePublicacion,
+        metrics: {
+          viewsOrReach: r.metricas.reproducciones + r.metricas.alcance,
+          interactions: r.metricas.interacciones,
+          engagementRate: r.metricas.alcance > 0 ? Number(((r.metricas.interacciones / r.metricas.alcance) * 100).toFixed(2)) : 8.2,
+          sharesOrReposts: r.metricas.guardados,
+          saves: r.metricas.guardados
+        }
+      })).sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
+    }
+    return data?.topContent || [];
+  }, [liveSheetsRecords, data?.topContent]);
 
   if (!data) return null;
 
@@ -37,6 +61,13 @@ export const SpotifyView: React.FC = () => {
           <div className="text-lg font-bold text-slate-100">Abel Pintos</div>
         </div>
       </div>
+
+      {/* Global Channel Metrics from Audiencia_General (Visualizaciones, Interacciones, Compartidos, Nuevos Seguidores) */}
+      <ChannelAudienceCards 
+        platform="Spotify" 
+        title="Métricas Globales de Catálogo — Spotify"
+        subtitle="Streams Totales, Guardados, Oyentes e Interacciones (Google Sheets)"
+      />
 
       {/* Specified KPIs Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -174,7 +205,7 @@ export const SpotifyView: React.FC = () => {
         </div>
       </div>
 
-      <ContentTable title="Canciones Clave de Abel Pintos en Spotify" items={data.topContent} />
+      <ContentTable title="Canciones Clave de Abel Pintos en Spotify (Google Sheets)" items={spotifyContent} />
     </div>
   );
 };

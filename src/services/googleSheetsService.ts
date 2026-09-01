@@ -166,6 +166,47 @@ export const transformSheetsRowToUniversalRecord = (row: RawGoogleSheetsRow, ind
   };
 };
 
+// Dynamically extract unique campaigns strictly from real Google Sheets records
+export const extractCampaignsFromRecords = (records: UniversalRecord[]): CampaignFilter[] => {
+  const uniqueThemes = [...new Set(records.map(r => r.campania).filter(Boolean))];
+  
+  const dynamicCampaigns: CampaignFilter[] = [
+    {
+      id: 'all',
+      label: 'Todas las Campañas',
+      description: 'Visión consolidada de todo el ecosistema digital registrado en Google Sheets',
+      badge: 'GLOBAL',
+      type: 'press',
+      startDate: '2026-08-01',
+      endDate: '2026-08-31',
+      year: 2026,
+      city: 'Todas'
+    }
+  ];
+
+  uniqueThemes.forEach((theme) => {
+    const themeRecords = records.filter(r => r.campania.toLowerCase() === theme.toLowerCase());
+    const dates = themeRecords.map(r => r.fecha).sort();
+    const startDate = dates[0] || '2026-08-01';
+    const endDate = dates[dates.length - 1] || '2026-08-31';
+    const isTour = theme.toUpperCase().includes('TOUR') || theme.toUpperCase().includes('GIRA');
+    
+    dynamicCampaigns.push({
+      id: theme.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+      label: theme,
+      description: `Campaña oficial con ${themeRecords.length} publicaciones registradas en Google Sheets`,
+      badge: isTour ? 'SHOWS' : 'SINGLE',
+      type: isTour ? 'tour' : 'release',
+      startDate,
+      endDate,
+      year: 2026,
+      city: 'Oficial'
+    });
+  });
+
+  return dynamicCampaigns;
+};
+
 // Real-Time Fetch from Google Sheets
 export const fetchGoogleSheetsMetrics = async (): Promise<UniversalRecord[]> => {
   try {

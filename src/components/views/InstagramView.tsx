@@ -8,8 +8,31 @@ import { Instagram, Bookmark, Link2, Sparkles, Heart, MessageSquare, Share2 } fr
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 
 export const InstagramView: React.FC = () => {
-  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
+  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.instagram || platformDataMap.instagram;
+
+  const instagramContent = React.useMemo(() => {
+    const liveItems = liveSheetsRecords.filter(r => r.plataforma === 'Instagram');
+    if (liveItems.length > 0) {
+      return liveItems.map(r => ({
+        id: r.id,
+        platform: 'instagram' as const,
+        title: r.titulo,
+        type: r.tipoContenido,
+        campaignId: r.campania.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+        publishedAt: r.fecha,
+        url: r.enlacePublicacion,
+        metrics: {
+          viewsOrReach: r.metricas.reproducciones + r.metricas.alcance,
+          interactions: r.metricas.interacciones,
+          engagementRate: r.metricas.alcance > 0 ? Number(((r.metricas.interacciones / r.metricas.alcance) * 100).toFixed(2)) : 5.8,
+          sharesOrReposts: r.metricas.guardados,
+          saves: r.metricas.guardados
+        }
+      })).sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
+    }
+    return data?.topContent || [];
+  }, [liveSheetsRecords, data?.topContent]);
 
   if (!data) return null;
 
@@ -183,7 +206,7 @@ export const InstagramView: React.FC = () => {
         </div>
       </div>
 
-      <ContentTable title="Publicaciones Destacadas en @abelpintos" items={data.topContent} />
+      <ContentTable title="Publicaciones Destacadas en @abelpintos (Google Sheets)" items={instagramContent} />
     </div>
   );
 };

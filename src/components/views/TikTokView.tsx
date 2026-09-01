@@ -8,8 +8,31 @@ import { Video, Play, Share2, Heart, Users, Clock } from 'lucide-react';
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 
 export const TikTokView: React.FC = () => {
-  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
+  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.tiktok || platformDataMap.tiktok;
+
+  const tiktokContent = React.useMemo(() => {
+    const liveItems = liveSheetsRecords.filter(r => r.plataforma === 'TikTok');
+    if (liveItems.length > 0) {
+      return liveItems.map(r => ({
+        id: r.id,
+        platform: 'tiktok' as const,
+        title: r.titulo,
+        type: r.tipoContenido,
+        campaignId: r.campania.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+        publishedAt: r.fecha,
+        url: r.enlacePublicacion,
+        metrics: {
+          viewsOrReach: r.metricas.reproducciones + r.metricas.alcance,
+          interactions: r.metricas.interacciones,
+          engagementRate: r.metricas.alcance > 0 ? Number(((r.metricas.interacciones / r.metricas.alcance) * 100).toFixed(2)) : 7.5,
+          sharesOrReposts: r.metricas.guardados,
+          saves: r.metricas.guardados
+        }
+      })).sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
+    }
+    return data?.topContent || [];
+  }, [liveSheetsRecords, data?.topContent]);
 
   if (!data) return null;
 
@@ -199,7 +222,7 @@ export const TikTokView: React.FC = () => {
         </div>
       </div>
 
-      <ContentTable title="Videos Virales en TikTok" items={data.topContent} />
+      <ContentTable title="Videos Virales en TikTok (Google Sheets)" items={tiktokContent} />
     </div>
   );
 };

@@ -46,6 +46,8 @@ export const OverviewView: React.FC = () => {
     searchQuery,
     setSearchQuery,
     universalSearchAggregation,
+    liveSheetsRecords,
+    campaigns,
     dateRange, 
     activeCampaign, 
     comparisonMode,
@@ -55,12 +57,38 @@ export const OverviewView: React.FC = () => {
     setIsSettingsModalOpen
   } = useDashboard();
 
-  const currentCampaignInfo = CAMPAIGNS.find(c => c.id === activeCampaign) || CAMPAIGNS[0];
+  const currentCampaignInfo = campaigns.find(c => c.id === activeCampaign) || campaigns[0] || CAMPAIGNS[0];
 
-  const allTopContent = Object.values(filteredPlatformDataMap)
-    .flatMap((p) => p.topContent)
-    .filter((c) => activeCampaign === 'all' || c.campaignId === activeCampaign)
-    .sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
+  const allTopContent = React.useMemo(() => {
+    if (liveSheetsRecords && liveSheetsRecords.length > 0) {
+      return liveSheetsRecords
+        .filter(r => {
+          if (activeCampaign === 'all') return true;
+          return r.campania.toLowerCase().replace(/[^a-z0-9]/g, '_') === activeCampaign || r.campania.toLowerCase() === activeCampaign.toLowerCase();
+        })
+        .map(r => ({
+          id: r.id,
+          platform: (r.plataforma.toLowerCase() === 'x' ? 'twitter' : r.plataforma.toLowerCase()) as any,
+          title: r.titulo,
+          type: r.tipoContenido,
+          campaignId: r.campania.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+          publishedAt: r.fecha,
+          url: r.enlacePublicacion,
+          metrics: {
+            viewsOrReach: r.metricas.reproducciones + r.metricas.alcance,
+            interactions: r.metricas.interacciones,
+            engagementRate: r.metricas.alcance > 0 ? Number(((r.metricas.interacciones / r.metricas.alcance) * 100).toFixed(2)) : 5.2,
+            sharesOrReposts: r.metricas.guardados,
+            saves: r.metricas.guardados
+          }
+        }))
+        .sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
+    }
+    return Object.values(filteredPlatformDataMap)
+      .flatMap((p) => p.topContent)
+      .filter((c) => activeCampaign === 'all' || c.campaignId === activeCampaign)
+      .sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
+  }, [liveSheetsRecords, activeCampaign, filteredPlatformDataMap]);
 
   const pieData = filteredOverview.platformComparison.map((p) => ({
     name: p.platform,

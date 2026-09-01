@@ -9,8 +9,31 @@ import { Twitter, Repeat, MessageSquare, Heart, ExternalLink } from 'lucide-reac
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 
 export const TwitterView: React.FC = () => {
-  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery } = useDashboard();
+  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.twitter || platformDataMap.twitter;
+
+  const twitterContent = React.useMemo(() => {
+    const liveItems = liveSheetsRecords.filter(r => r.plataforma === 'X');
+    if (liveItems.length > 0) {
+      return liveItems.map(r => ({
+        id: r.id,
+        platform: 'twitter' as const,
+        title: r.titulo,
+        type: r.tipoContenido,
+        campaignId: r.campania.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+        publishedAt: r.fecha,
+        url: r.enlacePublicacion,
+        metrics: {
+          viewsOrReach: r.metricas.reproducciones + r.metricas.alcance,
+          interactions: r.metricas.interacciones,
+          engagementRate: r.metricas.alcance > 0 ? Number(((r.metricas.interacciones / r.metricas.alcance) * 100).toFixed(2)) : 3.9,
+          sharesOrReposts: r.metricas.guardados,
+          saves: r.metricas.guardados
+        }
+      })).sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
+    }
+    return data?.topContent || [];
+  }, [liveSheetsRecords, data?.topContent]);
 
   if (!data) return null;
 
@@ -144,7 +167,7 @@ export const TwitterView: React.FC = () => {
         </div>
       </div>
 
-      <ContentTable title="Tweets Destacados de Abel Pintos" items={data.topContent} />
+      <ContentTable title="Tweets Destacados de Abel Pintos (Google Sheets)" items={twitterContent} />
     </div>
   );
 };

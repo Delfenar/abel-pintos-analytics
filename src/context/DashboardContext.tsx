@@ -33,6 +33,7 @@ import {
   sendMetricsToGoogleSheets, 
   fetchGoogleSheetsMetrics,
   computeChannelAudienceMetrics,
+  extractCampaignsFromRecords,
   ChannelAudienceMetric
 } from '../services/googleSheetsService';
 import { ToastNotification, ToastState } from '../components/ui/ToastNotification';
@@ -231,6 +232,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const records = await fetchGoogleSheetsMetrics();
       if (records && records.length > 0) {
         setLiveSheetsRecords(records);
+        const dynamicCampaigns = extractCampaignsFromRecords(records);
+        setCampaigns(dynamicCampaigns);
       }
     } catch (e) {
       console.error('Error al obtener datos reales de Google Sheets:', e);
@@ -239,29 +242,26 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Fetch real Google Sheets metrics on mount
+  // Fetch real Google Sheets metrics on mount and clean up old local storage caches
   useEffect(() => {
+    try {
+      localStorage.removeItem('panter_look_custom_campaigns');
+    } catch (e) {
+      // Ignore
+    }
     loadLiveSheetsData();
   }, []);
 
   // Universal Relational Search Engine Aggregation
-  // Uses Live Google Sheets records if available, merged/fallback with MASTER_INDEXABLE_RECORDS
+  // Uses EXCLUSIVELY real Google Sheets records
   const universalSearchAggregation: UniversalSearchAggregation = useMemo(() => {
-    let activeDataset = MASTER_INDEXABLE_RECORDS;
-    if (liveSheetsRecords.length > 0) {
-      // Find theme/campaign names from live sheets and prioritize live rows
-      const liveTemaNames = new Set(liveSheetsRecords.map(r => r.campania.toLowerCase()));
-      const filteredMaster = MASTER_INDEXABLE_RECORDS.filter(
-        r => !liveTemaNames.has(r.campania.toLowerCase()) && !liveTemaNames.has(r.titulo.toLowerCase())
-      );
-      activeDataset = [...liveSheetsRecords, ...filteredMaster];
-    }
+    const activeDataset = liveSheetsRecords.length > 0 ? liveSheetsRecords : [];
     return searchUniversalRecords(searchQuery, activeDataset);
   }, [searchQuery, liveSheetsRecords]);
 
   // Channel Audience Metrics (Visualizaciones, Interacciones, Contenidos_Compartidos, Nuevos_Seguidores)
   const channelAudienceMetrics: Record<PlatformName, ChannelAudienceMetric> = useMemo(() => {
-    const activeDataset = liveSheetsRecords.length > 0 ? liveSheetsRecords : MASTER_INDEXABLE_RECORDS;
+    const activeDataset = liveSheetsRecords.length > 0 ? liveSheetsRecords : [];
     return computeChannelAudienceMetrics(activeDataset);
   }, [liveSheetsRecords]);
 

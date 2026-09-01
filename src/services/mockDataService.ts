@@ -17,89 +17,32 @@ export const DEFAULT_CAMPAIGNS: CampaignFilter[] = [
   { 
     id: 'all', 
     label: 'Todas las Campañas', 
-    description: 'Visión consolidada de todo el ecosistema digital', 
+    description: 'Visión consolidada de todo el ecosistema digital registrado en Google Sheets', 
     badge: 'GLOBAL',
     type: 'press',
     startDate: '2026-08-01',
-    endDate: '2026-08-26',
+    endDate: '2026-08-31',
     year: 2026,
     city: 'Todas',
     targetReach: 18500000
-  },
-  { 
-    id: 'tour30', 
-    label: 'Gira 30 Aniversario / Shows BA & Rosario', 
-    description: 'Promoción de conciertos masivos y venta de tickets', 
-    badge: 'SHOWS',
-    type: 'tour',
-    startDate: '2026-08-10',
-    endDate: '2026-08-25',
-    year: 2026,
-    city: 'Buenos Aires & Rosario',
-    targetTickets: 120000,
-    targetReach: 8500000
-  },
-  { 
-    id: 'album', 
-    label: 'Lanzamiento de Álbum & Singles', 
-    description: 'Promoción de nuevos sencillos y reproducción en streaming', 
-    badge: 'MÚSICA',
-    type: 'release',
-    startDate: '2026-08-05',
-    endDate: '2026-08-20',
-    year: 2026,
-    city: 'Internacional',
-    targetStreams: 25000000,
-    targetReach: 12000000
-  },
-  { 
-    id: 'book', 
-    label: 'Libro Conmemorativo', 
-    description: 'Lanzamiento editorial conmemorativo y firma de ejemplares', 
-    badge: 'LIBRO',
-    type: 'merch',
-    startDate: '2026-08-15',
-    endDate: '2026-08-24',
-    year: 2026,
-    city: 'Buenos Aires',
-    targetReach: 3500000
-  },
-  { 
-    id: 'release_ibuprofeno', 
-    label: 'Lanzamiento Single Ibuprofeno', 
-    description: 'Estreno del nuevo single 2026 y gira de medios', 
-    badge: 'SINGLE',
-    type: 'release',
-    startDate: '2026-08-27',
-    endDate: '2026-08-31',
-    year: 2026,
-    city: 'Buenos Aires',
-    targetStreams: 5000000,
-    targetReach: 3000000
-  },
+  }
 ];
 
 const LOCAL_STORAGE_KEY = 'panter_look_custom_campaigns';
 
 export const loadCampaignsFromStorage = (): CampaignFilter[] => {
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (raw) {
-      const stored: CampaignFilter[] = JSON.parse(raw);
-      // Merge defaults with stored custom campaigns
-      const existingIds = new Set(DEFAULT_CAMPAIGNS.map(c => c.id));
-      const customOnly = stored.filter(c => !existingIds.has(c.id));
-      return [...DEFAULT_CAMPAIGNS, ...customOnly];
-    }
+    // Clear old mock data if present
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
   } catch (e) {
-    console.error('Error loading custom campaigns from localStorage', e);
+    // Ignore in non-browser environments
   }
   return DEFAULT_CAMPAIGNS;
 };
 
 export const saveCampaignsToStorage = (campaigns: CampaignFilter[]) => {
   try {
-    const customOnly = campaigns.filter(c => c.isUserCreated || !DEFAULT_CAMPAIGNS.some(d => d.id === c.id));
+    const customOnly = campaigns.filter(c => c.isUserCreated);
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(customOnly));
   } catch (e) {
     console.error('Error saving custom campaigns to localStorage', e);
