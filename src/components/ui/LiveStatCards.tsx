@@ -21,7 +21,9 @@ import {
 import { BlackPantherIcon } from './BlackPantherIcon';
 
 export const LiveStatCards: React.FC = () => {
-  const { filteredPlatformDataMap, filteredOverview } = useDashboard();
+  const { filteredPlatformDataMap, filteredOverview, channelAudienceMetrics } = useDashboard();
+
+  const spotifyMonthly = channelAudienceMetrics?.Spotify?.oyentesMensuales || 3700000;
 
   return (
     <div className="space-y-4">
@@ -43,7 +45,7 @@ export const LiveStatCards: React.FC = () => {
             Audiencia Total Acumulada
           </div>
           <div className="text-2xl sm:text-3xl font-black text-slate-100 font-mono tracking-tight my-1">
-            17.4M+
+            16.7M+
           </div>
           <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
             <span className="text-emerald-400 font-bold flex items-center gap-1">
@@ -69,7 +71,7 @@ export const LiveStatCards: React.FC = () => {
             Spotify Artista Oficial
           </div>
           <div className="text-2xl sm:text-3xl font-black text-slate-100 font-mono tracking-tight my-1">
-            4.42M
+            {spotifyMonthly >= 1000000 ? `${(spotifyMonthly / 1000000).toFixed(1)}M` : spotifyMonthly.toLocaleString()}
           </div>
           <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
             <span className="text-gold-400 font-semibold flex items-center gap-1">

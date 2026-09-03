@@ -9,8 +9,13 @@ import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
 
 export const SpotifyView: React.FC = () => {
-  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
+  const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords, channelAudienceMetrics } = useDashboard();
   const data = filteredPlatformDataMap.spotify || platformDataMap.spotify;
+
+  const spotifyAudience = channelAudienceMetrics?.Spotify;
+  const currentMonthlyListeners = spotifyAudience?.oyentesMensuales || 3700000;
+  const currentFollowers = spotifyAudience?.totalSeguidores || 3840000;
+  const activeListeners = spotifyAudience?.oyentesActivos;
 
   const spotifyContent = React.useMemo(() => {
     const liveItems = getLatestSnapshotsByItem(liveSheetsRecords.filter(r => r.plataforma === 'Spotify'));
@@ -54,7 +59,7 @@ export const SpotifyView: React.FC = () => {
             Spotify Perfil Oficial de Artista
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-100">Abel Pintos en Spotify</h2>
-          <p className="text-xs text-slate-300 mt-1">4.4M+ Oyentes Mensuales | 3.8M+ Seguidores | Oncemil, Motivos, Sin Principio Ni Final</p>
+          <p className="text-xs text-slate-300 mt-1">{(currentMonthlyListeners / 1000000).toFixed(1)}M Oyentes Mensuales | {(currentFollowers / 1000000).toFixed(1)}M Seguidores | Oncemil, Motivos, Sin Principio Ni Final</p>
         </div>
 
         <div className="glass-panel px-4 py-2 rounded-xl text-right border-emerald-500/30">
@@ -112,13 +117,14 @@ export const SpotifyView: React.FC = () => {
       {/* Core Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
-          label={data.metrics.listeners.label}
-          value={data.metrics.listeners.value}
+          label="Oyentes Mensuales (Spotify)"
+          value={currentMonthlyListeners}
           previousWeekValue={data.metrics.listeners.previousWeekValue}
           previousMonthValue={data.metrics.listeners.previousMonthValue}
           previousYearValue={data.metrics.listeners.previousYearValue}
           sparkline={data.metrics.listeners.sparkline}
           brandColor="#1DB954"
+          description={activeListeners ? `Oyentes Activos: ${activeListeners.toLocaleString()} (métrica secundaria)` : 'Oyentes netos vigentes'}
         />
         <StatCard
           label={data.metrics.streams.label}
@@ -148,8 +154,8 @@ export const SpotifyView: React.FC = () => {
           brandColor="#C5A059"
         />
         <StatCard
-          label={data.metrics.followers.label}
-          value={data.metrics.followers.value}
+          label="Seguidores en Spotify"
+          value={currentFollowers}
           previousWeekValue={data.metrics.followers.previousWeekValue}
           previousMonthValue={data.metrics.followers.previousMonthValue}
           previousYearValue={data.metrics.followers.previousYearValue}

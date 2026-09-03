@@ -22,7 +22,7 @@ export const Sidebar: React.FC = () => {
 
   const menuItems: { id: PlatformId; label: string; sub: string; icon: React.FC<{ className?: string }>; color: string; badge?: string }[] = [
     { id: 'overview', label: 'Vista Global', sub: 'Ecosistema Abel Pintos', icon: LayoutDashboard, color: 'text-gold-400' },
-    { id: 'spotify', label: 'Spotify', sub: 'Abel Pintos (4.4M)', icon: Music, color: 'text-emerald-500' },
+    { id: 'spotify', label: 'Spotify', sub: 'Abel Pintos (3.7M)', icon: Music, color: 'text-emerald-500' },
     { id: 'instagram', label: 'Instagram', sub: '@abelpintos (2.55M)', icon: Instagram, color: 'text-pink-500' },
     { id: 'youtube', label: 'YouTube', sub: '@AbelPintos (1.71M)', icon: Youtube, color: 'text-red-500' },
     { id: 'facebook', label: 'Facebook', sub: 'Abel Pintos (3.1M)', icon: Facebook, color: 'text-blue-500' },

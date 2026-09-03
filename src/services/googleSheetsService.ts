@@ -49,8 +49,16 @@ export interface RawGoogleSheetsAudienceRow {
   seguidores?: number | string;
   Total_Seguidores?: number | string;
   total_seguidores?: number | string;
+  Spotify_Seguidores?: number | string;
+  spotify_seguidores?: number | string;
+  Spotify_Oyentes_Mensuales?: number | string;
+  spotify_oyentes_mensuales?: number | string;
   Oyentes_Mensuales?: number | string;
   oyentes_mensuales?: number | string;
+  Spotify_Oyentes?: number | string;
+  spotify_oyentes?: number | string;
+  Oyentes?: number | string;
+  oyentes?: number | string;
   Suscriptores?: number | string;
   suscriptores?: number | string;
   Visualizaciones?: number | string;
@@ -61,6 +69,7 @@ export interface RawGoogleSheetsAudienceRow {
   contenidos_compartidos?: number | string;
   Nuevos_Seguidores?: number | string;
   nuevos_seguidores?: number | string;
+  [key: string]: any;
 }
 
 export interface GoogleSheetsResponse {
@@ -77,6 +86,7 @@ export interface AudienceRecord {
   plataforma: PlatformName;
   seguidores: number;
   oyentesMensuales?: number;
+  oyentesActivos?: number;
   suscriptores?: number;
   visualizaciones: number;
   interacciones: number;
@@ -90,6 +100,7 @@ export interface AudienceEvolutionPoint {
   plataforma: PlatformName;
   seguidores: number;
   oyentesMensuales?: number;
+  oyentesActivos?: number;
   suscriptores?: number;
   visualizaciones: number;
   interacciones: number;
@@ -103,6 +114,7 @@ export interface ChannelAudienceMetric {
   nuevosSeguidores: number; // Nuevos Seguidores ganados
   totalSeguidores?: number;
   oyentesMensuales?: number;
+  oyentesActivos?: number;
   suscriptores?: number;
   publicacionesCount: number;
   fechaActualizacion?: string;
@@ -130,10 +142,31 @@ export const transformSheetsRowToAudienceRecord = (
   const fechaActualizacion = String(rawDate).split('T')[0];
   const plataforma = normalizePlatformName(row.Plataforma || row.plataforma);
 
+  // 1. Prohibición de Sumas en Oyentes Mensuales:
+  // Lectura directa y neta del valor 'Spotify_Oyentes_Mensuales' o 'Oyentes_Mensuales'
+  const rawMonthlyListeners = 
+    row.Spotify_Oyentes_Mensuales ?? 
+    row.spotify_oyentes_mensuales ?? 
+    row.Oyentes_Mensuales ?? 
+    row.oyentes_mensuales;
+
+  const oyentesMensuales = rawMonthlyListeners !== undefined && rawMonthlyListeners !== null && rawMonthlyListeners !== ''
+    ? Number(rawMonthlyListeners)
+    : (plataforma === 'Spotify' ? 3700000 : undefined);
+
+  // 2. Métrica secundaria: 'Spotify_Oyentes' (Oyentes Activos), NUNCA sumada a Oyentes Mensuales
+  const rawActiveListeners = 
+    row.Spotify_Oyentes ?? 
+    row.spotify_oyentes ?? 
+    row.Oyentes ?? 
+    row.oyentes;
+  const oyentesActivos = rawActiveListeners !== undefined && rawActiveListeners !== null && rawActiveListeners !== ''
+    ? Number(rawActiveListeners)
+    : undefined;
+
   const seguidores = Number(
-    row.Seguidores ?? row.seguidores ?? row.Total_Seguidores ?? row.total_seguidores ?? row.Suscriptores ?? row.suscriptores ?? 0
+    row.Spotify_Seguidores ?? row.Seguidores ?? row.seguidores ?? row.Total_Seguidores ?? row.total_seguidores ?? row.Suscriptores ?? row.suscriptores ?? (plataforma === 'Spotify' ? 3840000 : 0)
   ) || 0;
-  const oyentesMensuales = Number(row.Oyentes_Mensuales ?? row.oyentes_mensuales ?? 0) || undefined;
   const suscriptores = Number(row.Suscriptores ?? row.suscriptores ?? 0) || undefined;
   const visualizaciones = Number(row.Visualizaciones ?? row.visualizaciones ?? 0) || 0;
   const interacciones = Number(row.Interacciones ?? row.interacciones ?? 0) || 0;
@@ -146,6 +179,7 @@ export const transformSheetsRowToAudienceRecord = (
     plataforma,
     seguidores,
     oyentesMensuales,
+    oyentesActivos,
     suscriptores,
     visualizaciones,
     interacciones,
@@ -165,7 +199,7 @@ export const getLatestAudienceSnapshots = (
   audienceRows: AudienceRecord[]
 ): Record<PlatformName, ChannelAudienceMetric> => {
   const audienceMap: Record<PlatformName, ChannelAudienceMetric> = {
-    Spotify: { platform: 'Spotify', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 4420000, oyentesMensuales: 3850000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    Spotify: { platform: 'Spotify', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 3840000, oyentesMensuales: 3700000, oyentesActivos: 2850000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
     YouTube: { platform: 'YouTube', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 1710000, suscriptores: 1710000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
     Instagram: { platform: 'Instagram', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 2550000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
     TikTok: { platform: 'TikTok', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 850000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
@@ -207,7 +241,8 @@ export const getLatestAudienceSnapshots = (
         contenidosCompartidos: latest.contenidosCompartidos,
         nuevosSeguidores: latest.nuevosSeguidores,
         totalSeguidores: latest.seguidores || audienceMap[platform].totalSeguidores,
-        oyentesMensuales: latest.oyentesMensuales || audienceMap[platform].oyentesMensuales,
+        oyentesMensuales: latest.oyentesMensuales !== undefined ? latest.oyentesMensuales : audienceMap[platform].oyentesMensuales,
+        oyentesActivos: latest.oyentesActivos !== undefined ? latest.oyentesActivos : audienceMap[platform].oyentesActivos,
         suscriptores: latest.suscriptores || latest.seguidores || audienceMap[platform].suscriptores,
         publicacionesCount: audienceMap[platform].publicacionesCount,
         fechaActualizacion: latest.fechaActualizacion
@@ -239,6 +274,7 @@ export const getAudienceEvolutionSeries = (
       plataforma: r.plataforma,
       seguidores: r.seguidores,
       oyentesMensuales: r.oyentesMensuales,
+      oyentesActivos: r.oyentesActivos,
       suscriptores: r.suscriptores,
       visualizaciones: r.visualizaciones,
       interacciones: r.interacciones
@@ -261,7 +297,7 @@ export const computeChannelAudienceMetrics = (
   }
 
   const audienceMap: Record<PlatformName, ChannelAudienceMetric> = {
-    Spotify: { platform: 'Spotify', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 4420000, oyentesMensuales: 3850000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    Spotify: { platform: 'Spotify', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 3840000, oyentesMensuales: 3700000, oyentesActivos: 2850000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
     YouTube: { platform: 'YouTube', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 1710000, suscriptores: 1710000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
     Instagram: { platform: 'Instagram', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 2550000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
     TikTok: { platform: 'TikTok', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 850000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },

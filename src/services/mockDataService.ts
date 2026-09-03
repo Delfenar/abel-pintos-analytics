@@ -161,10 +161,10 @@ export const getMockPlatformData = (
   const dateLabels = generateDates(days);
 
   // --- 1. SPOTIFY ---
-  const spListeners = Math.round(4420000 * (campaign === 'all' ? 1 : (0.7 + campMult * 0.3)));
-  const spListenersWoW = Math.round(4280000 * (campaign === 'all' ? 1 : (0.7 + campMult * 0.3)));
-  const spListenersMoM = Math.round(4120000 * (campaign === 'all' ? 1 : (0.7 + campMult * 0.3)));
-  const spListenersYoY = Math.round(3550000 * (campaign === 'all' ? 1 : (0.7 + campMult * 0.3)));
+  const spListeners = Math.round(3700000 * (campaign === 'all' ? 1 : (0.7 + campMult * 0.3)));
+  const spListenersWoW = Math.round(3620000 * (campaign === 'all' ? 1 : (0.7 + campMult * 0.3)));
+  const spListenersMoM = Math.round(3550000 * (campaign === 'all' ? 1 : (0.7 + campMult * 0.3)));
+  const spListenersYoY = Math.round(3200000 * (campaign === 'all' ? 1 : (0.7 + campMult * 0.3)));
 
   const spStreams = Math.round(18500000 * mult);
   const spStreamsWoW = Math.round(17200000 * mult);
@@ -214,7 +214,7 @@ export const getMockPlatformData = (
     id: 'spotify',
     name: 'Spotify Artista Oficial',
     handle: 'Abel Pintos',
-    officialAudience: '4.4M Oyentes Mensuales',
+    officialAudience: '3.7M Oyentes Mensuales',
     iconName: 'Music',
     brandColor: '#1DB954',
     metrics: {
@@ -225,8 +225,8 @@ export const getMockPlatformData = (
         previousWeekValue: spListenersWoW,
         previousMonthValue: spListenersMoM,
         previousYearValue: spListenersYoY,
-        sparkline: [4.1, 4.18, 4.25, 4.31, 4.36, 4.40, 4.42],
-        comparisonSparkline: [3.5, 3.6, 3.7, 3.8, 3.9, 4.0, 4.12]
+        sparkline: [3.4, 3.48, 3.55, 3.6, 3.64, 3.68, 3.70],
+        comparisonSparkline: [3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.55]
       },
       streams: {
         id: 'streams',
@@ -1191,7 +1191,7 @@ export const getGlobalOverviewData = (
   const days = getDaysCount(range);
   const dateLabels = generateDates(days);
 
-  const totalCommunityVal = 4420000 + 3840000 + 2550000 + 1710000 + 3100000 + 1700000 + 850000 + 420000;
+  const totalCommunityVal = 3700000 + 3840000 + 2550000 + 1710000 + 3100000 + 1700000 + 850000 + 420000;
 
   const totalReachVal = Object.values(platformData).reduce((acc, p) => {
     const reachKey = p.metrics.reach ? 'reach' : p.metrics.totalReach ? 'totalReach' : p.metrics.videoViews ? 'videoViews' : p.metrics.impressions ? 'impressions' : p.metrics.views ? 'views' : 'listeners';
@@ -1277,7 +1277,7 @@ export const getGlobalOverviewData = (
       sparkline: [14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7]
     },
     platformComparison: [
-      { platform: 'Spotify', reach: Math.round(4420000 * (campaign === 'all' ? 1 : 0.7)), engagement: 19.8, conversion: 9.2, followers: 3840000 },
+      { platform: 'Spotify', reach: Math.round(3700000 * (campaign === 'all' ? 1 : 0.7)), engagement: 19.8, conversion: 9.2, followers: 3840000 },
       { platform: 'Instagram', reach: Math.round(6800000 * mult), engagement: 18.2, conversion: 6.8, followers: 2550000 },
       { platform: 'YouTube', reach: Math.round(14500000 * mult), engagement: 12.4, conversion: 8.6, followers: 1710000 },
       { platform: 'Facebook', reach: Math.round(5800000 * mult), engagement: 12.8, conversion: 6.4, followers: 3100000 },
@@ -1298,7 +1298,7 @@ export const getMockApiPayloads = (): ApiPayloadSample[] => [
     status: 200,
     payload: {
       artist_name: 'Abel Pintos',
-      monthly_listeners: 4420000,
+      monthly_listeners: 3700000,
       followers: 3840000,
       top_tracks: [
         { name: 'Oncemil', streams: 142500000 },
