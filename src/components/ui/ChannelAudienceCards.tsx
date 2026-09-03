@@ -47,7 +47,8 @@ export const ChannelAudienceCards: React.FC<ChannelAudienceCardsProps> = ({
       contenidosCompartidos: 0,
       nuevosSeguidores: 0,
       totalSeguidores: 0,
-      publicacionesCount: 0
+      publicacionesCount: 0,
+      fechaActualizacion: '2026-08-31'
     };
 
     return (
@@ -58,17 +59,28 @@ export const ChannelAudienceCards: React.FC<ChannelAudienceCardsProps> = ({
               {platformIcons[platform]}
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-black text-slate-100 flex items-center gap-2">
-                <span>{title} ({platform})</span>
-                <span className="px-2 py-0.5 rounded-full bg-gold-400/10 text-gold-300 text-[10px] font-bold border border-gold-400/20">
-                  En Vivo
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-black text-slate-100 flex items-center gap-2">
+                  <span>{title} ({platform})</span>
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                  Snapshot Vigente
                 </span>
-              </h3>
+                {data.fechaActualizacion && (
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    al {data.fechaActualizacion}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-slate-400">{subtitle}</p>
             </div>
           </div>
-          <div className="text-xs font-semibold text-slate-400">
-            {data.publicacionesCount} publicaciones indexadas
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
+            <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 font-mono text-slate-200">
+              {data.totalSeguidores ? `${(data.totalSeguidores / 1000000).toFixed(2)}M seguidores` : 'Perfil Oficial'}
+            </span>
+            <span>•</span>
+            <span>{data.publicacionesCount} posts indexados</span>
           </div>
         </div>
 
@@ -79,14 +91,16 @@ export const ChannelAudienceCards: React.FC<ChannelAudienceCardsProps> = ({
             <div>
               <div className="text-[11px] font-extrabold text-gold-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
                 <Eye className="w-4 h-4 text-gold-400" />
-                Visualizaciones Totales
+                {platform === 'Spotify' ? 'Oyentes Mensuales' : 'Visualizaciones Totales'}
               </div>
               <div className="text-2xl sm:text-3xl font-black text-slate-100 font-mono tracking-tight">
-                {data.visualizaciones.toLocaleString()}
+                {platform === 'Spotify' && data.oyentesMensuales 
+                  ? data.oyentesMensuales.toLocaleString()
+                  : data.visualizaciones.toLocaleString()}
               </div>
             </div>
             <div className="text-[11px] text-slate-400 font-semibold mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between">
-              <span>Reproducciones / Views</span>
+              <span>{platform === 'Spotify' ? 'Audiencia Mensual Activa' : 'Reproducciones / Views'}</span>
               <span className="text-gold-400 font-bold">100% Real</span>
             </div>
           </div>
@@ -130,14 +144,16 @@ export const ChannelAudienceCards: React.FC<ChannelAudienceCardsProps> = ({
             <div>
               <div className="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
                 <UserPlus className="w-4 h-4 text-emerald-400" />
-                Nuevos Seguidores
+                {platform === 'YouTube' ? 'Suscriptores del Canal' : 'Nuevos Seguidores'}
               </div>
               <div className="text-2xl sm:text-3xl font-black text-slate-100 font-mono tracking-tight">
-                +{data.nuevosSeguidores.toLocaleString()}
+                {platform === 'YouTube' && data.suscriptores
+                  ? data.suscriptores.toLocaleString()
+                  : `+${data.nuevosSeguidores.toLocaleString()}`}
               </div>
             </div>
             <div className="text-[11px] text-emerald-300 font-semibold mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between">
-              <span>Crecimiento de Audiencia</span>
+              <span>{platform === 'YouTube' ? 'Comunidad YouTube' : 'Crecimiento de Audiencia'}</span>
               <span className="text-emerald-400 font-bold flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" /> +Neto
               </span>
@@ -192,7 +208,15 @@ export const ChannelAudienceCards: React.FC<ChannelAudienceCardsProps> = ({
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-slate-100">{plat}</h4>
-                    <span className="text-[10px] text-slate-400">{item.publicacionesCount} posts indexados</span>
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                      <span>{item.publicacionesCount} posts</span>
+                      {item.fechaActualizacion && (
+                        <>
+                          <span>•</span>
+                          <span className="text-emerald-400 font-mono">al {item.fechaActualizacion}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-slate-300">

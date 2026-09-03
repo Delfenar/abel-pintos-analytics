@@ -38,9 +38,61 @@ export interface RawGoogleSheetsRow {
   link?: string;
 }
 
+export interface RawGoogleSheetsAudienceRow {
+  Fecha_Actualizacion?: string;
+  fecha_actualizacion?: string;
+  Fecha?: string;
+  fecha?: string;
+  Plataforma?: string;
+  plataforma?: string;
+  Seguidores?: number | string;
+  seguidores?: number | string;
+  Total_Seguidores?: number | string;
+  total_seguidores?: number | string;
+  Oyentes_Mensuales?: number | string;
+  oyentes_mensuales?: number | string;
+  Suscriptores?: number | string;
+  suscriptores?: number | string;
+  Visualizaciones?: number | string;
+  visualizaciones?: number | string;
+  Interacciones?: number | string;
+  interacciones?: number | string;
+  Contenidos_Compartidos?: number | string;
+  contenidos_compartidos?: number | string;
+  Nuevos_Seguidores?: number | string;
+  nuevos_seguidores?: number | string;
+}
+
 export interface GoogleSheetsResponse {
   status: string;
   data: RawGoogleSheetsRow[];
+  audiencia?: RawGoogleSheetsAudienceRow[];
+  audiencia_general?: RawGoogleSheetsAudienceRow[];
+  dataAudiencia?: RawGoogleSheetsAudienceRow[];
+}
+
+export interface AudienceRecord {
+  id: string;
+  fechaActualizacion: string;
+  plataforma: PlatformName;
+  seguidores: number;
+  oyentesMensuales?: number;
+  suscriptores?: number;
+  visualizaciones: number;
+  interacciones: number;
+  contenidosCompartidos: number;
+  nuevosSeguidores: number;
+}
+
+export interface AudienceEvolutionPoint {
+  fecha: string;
+  timestamp: number;
+  plataforma: PlatformName;
+  seguidores: number;
+  oyentesMensuales?: number;
+  suscriptores?: number;
+  visualizaciones: number;
+  interacciones: number;
 }
 
 export interface ChannelAudienceMetric {
@@ -50,7 +102,10 @@ export interface ChannelAudienceMetric {
   contenidosCompartidos: number; // Contador de shares y contenidos compartidos por la audiencia
   nuevosSeguidores: number; // Nuevos Seguidores ganados
   totalSeguidores?: number;
+  oyentesMensuales?: number;
+  suscriptores?: number;
   publicacionesCount: number;
+  fechaActualizacion?: string;
 }
 
 export interface GoogleSheetsRowV2 {
@@ -66,18 +121,153 @@ export interface GoogleSheetsRowV2 {
   estadoKpi: string;
 }
 
-// Compute Channel Audience Metrics dynamically across all real records (Latest Snapshots)
-export const computeChannelAudienceMetrics = (
-  records: UniversalRecord[]
+// Transform raw Google Sheets audience row to AudienceRecord
+export const transformSheetsRowToAudienceRecord = (
+  row: RawGoogleSheetsAudienceRow,
+  index: number
+): AudienceRecord => {
+  const rawDate = row.Fecha_Actualizacion || row.fecha_actualizacion || row.Fecha || row.fecha || '2026-08-31';
+  const fechaActualizacion = String(rawDate).split('T')[0];
+  const plataforma = normalizePlatformName(row.Plataforma || row.plataforma);
+
+  const seguidores = Number(
+    row.Seguidores ?? row.seguidores ?? row.Total_Seguidores ?? row.total_seguidores ?? row.Suscriptores ?? row.suscriptores ?? 0
+  ) || 0;
+  const oyentesMensuales = Number(row.Oyentes_Mensuales ?? row.oyentes_mensuales ?? 0) || undefined;
+  const suscriptores = Number(row.Suscriptores ?? row.suscriptores ?? 0) || undefined;
+  const visualizaciones = Number(row.Visualizaciones ?? row.visualizaciones ?? 0) || 0;
+  const interacciones = Number(row.Interacciones ?? row.interacciones ?? 0) || 0;
+  const contenidosCompartidos = Number(row.Contenidos_Compartidos ?? row.contenidos_compartidos ?? 0) || 0;
+  const nuevosSeguidores = Number(row.Nuevos_Seguidores ?? row.nuevos_seguidores ?? 0) || 0;
+
+  return {
+    id: `aud-${plataforma.toLowerCase()}-${index + 1}-${fechaActualizacion}`,
+    fechaActualizacion,
+    plataforma,
+    seguidores,
+    oyentesMensuales,
+    suscriptores,
+    visualizaciones,
+    interacciones,
+    contenidosCompartidos,
+    nuevosSeguidores
+  };
+};
+
+/**
+ * 1. Agrupación y Último Snapshot por Canal:
+ * Para las tarjetas de perfil y KPIs por canal (Spotify, YouTube, Instagram, etc.),
+ * agrupa las filas del array 'audiencia' por 'Plataforma', ordena por 'Fecha_Actualizacion' (descendente)
+ * y toma ÚNICAMENTE el registro más reciente.
+ * Prohibición: NO suma seguidores o métricas acumuladas de distintas fechas de una misma plataforma.
+ */
+export const getLatestAudienceSnapshots = (
+  audienceRows: AudienceRecord[]
 ): Record<PlatformName, ChannelAudienceMetric> => {
   const audienceMap: Record<PlatformName, ChannelAudienceMetric> = {
-    Spotify: { platform: 'Spotify', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 4420000, publicacionesCount: 0 },
-    YouTube: { platform: 'YouTube', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 1710000, publicacionesCount: 0 },
-    Instagram: { platform: 'Instagram', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 2550000, publicacionesCount: 0 },
-    TikTok: { platform: 'TikTok', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 850000, publicacionesCount: 0 },
-    Facebook: { platform: 'Facebook', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 3800000, publicacionesCount: 0 },
-    X: { platform: 'X', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 2100000, publicacionesCount: 0 },
-    Threads: { platform: 'Threads', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 420000, publicacionesCount: 0 },
+    Spotify: { platform: 'Spotify', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 4420000, oyentesMensuales: 3850000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    YouTube: { platform: 'YouTube', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 1710000, suscriptores: 1710000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    Instagram: { platform: 'Instagram', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 2550000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    TikTok: { platform: 'TikTok', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 850000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    Facebook: { platform: 'Facebook', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 3800000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    X: { platform: 'X', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 2100000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    Threads: { platform: 'Threads', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 420000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+  };
+
+  if (!audienceRows || audienceRows.length === 0) {
+    return audienceMap;
+  }
+
+  // Agrupación por plataforma
+  const groups = new Map<PlatformName, AudienceRecord[]>();
+  audienceRows.forEach(row => {
+    if (!groups.has(row.plataforma)) {
+      groups.set(row.plataforma, []);
+    }
+    groups.get(row.plataforma)!.push(row);
+  });
+
+  // Para cada plataforma, ordena cronológicamente descendente y toma ÚNICAMENTE el registro más reciente
+  groups.forEach((rows, platform) => {
+    const sorted = [...rows].sort((a, b) => {
+      const timeA = new Date(a.fechaActualizacion).getTime();
+      const timeB = new Date(b.fechaActualizacion).getTime();
+      if (!isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+        return timeB - timeA;
+      }
+      return b.fechaActualizacion.localeCompare(a.fechaActualizacion);
+    });
+
+    const latest = sorted[0];
+    if (latest) {
+      audienceMap[platform] = {
+        platform,
+        visualizaciones: latest.visualizaciones,
+        interacciones: latest.interacciones,
+        contenidosCompartidos: latest.contenidosCompartidos,
+        nuevosSeguidores: latest.nuevosSeguidores,
+        totalSeguidores: latest.seguidores || audienceMap[platform].totalSeguidores,
+        oyentesMensuales: latest.oyentesMensuales || audienceMap[platform].oyentesMensuales,
+        suscriptores: latest.suscriptores || latest.seguidores || audienceMap[platform].suscriptores,
+        publicacionesCount: audienceMap[platform].publicacionesCount,
+        fechaActualizacion: latest.fechaActualizacion
+      };
+    }
+  });
+
+  return audienceMap;
+};
+
+/**
+ * 2. Evolución Histórica de Audiencia (para gráficos):
+ * Devuelve la serie temporal completa de mediciones ordenada cronológicamente por 'Fecha_Actualizacion'.
+ */
+export const getAudienceEvolutionSeries = (
+  audienceRows: AudienceRecord[],
+  platformFilter?: PlatformName
+): AudienceEvolutionPoint[] => {
+  if (!audienceRows || audienceRows.length === 0) return [];
+
+  const filtered = platformFilter
+    ? audienceRows.filter(r => r.plataforma === platformFilter)
+    : audienceRows;
+
+  return [...filtered]
+    .map(r => ({
+      fecha: r.fechaActualizacion,
+      timestamp: new Date(r.fechaActualizacion).getTime() || 0,
+      plataforma: r.plataforma,
+      seguidores: r.seguidores,
+      oyentesMensuales: r.oyentesMensuales,
+      suscriptores: r.suscriptores,
+      visualizaciones: r.visualizaciones,
+      interacciones: r.interacciones
+    }))
+    .sort((a, b) => a.timestamp - b.timestamp);
+};
+
+// Compute Channel Audience Metrics dynamically across all real records (Latest Snapshots)
+export const computeChannelAudienceMetrics = (
+  records: UniversalRecord[],
+  audienceRecords: AudienceRecord[] = []
+): Record<PlatformName, ChannelAudienceMetric> => {
+  if (audienceRecords && audienceRecords.length > 0) {
+    const latestAudience = getLatestAudienceSnapshots(audienceRecords);
+    const latestPosts = getLatestSnapshotsByItem(records);
+    (Object.keys(latestAudience) as PlatformName[]).forEach(plat => {
+      latestAudience[plat].publicacionesCount = latestPosts.filter(r => r.plataforma === plat).length;
+    });
+    return latestAudience;
+  }
+
+  const audienceMap: Record<PlatformName, ChannelAudienceMetric> = {
+    Spotify: { platform: 'Spotify', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 4420000, oyentesMensuales: 3850000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    YouTube: { platform: 'YouTube', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 1710000, suscriptores: 1710000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    Instagram: { platform: 'Instagram', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 2550000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    TikTok: { platform: 'TikTok', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 850000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    Facebook: { platform: 'Facebook', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 3800000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    X: { platform: 'X', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 2100000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
+    Threads: { platform: 'Threads', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 420000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
   };
 
   const latestRecords = getLatestSnapshotsByItem(records);
@@ -95,6 +285,9 @@ export const computeChannelAudienceMetrics = (
       audienceMap[plat].contenidosCompartidos += shares;
       audienceMap[plat].nuevosSeguidores += newFollowers;
       audienceMap[plat].publicacionesCount += 1;
+      if (rec.fecha) {
+        audienceMap[plat].fechaActualizacion = rec.fecha;
+      }
     }
   });
 
@@ -209,10 +402,15 @@ export const extractCampaignsFromRecords = (records: UniversalRecord[]): Campaig
   return dynamicCampaigns;
 };
 
-// Real-Time Fetch from Google Sheets
-export const fetchGoogleSheetsMetrics = async (): Promise<UniversalRecord[]> => {
+export interface LiveGoogleSheetsPayload {
+  metricRecords: UniversalRecord[];
+  audienceRecords: AudienceRecord[];
+}
+
+// Full Real-Time Fetch from Google Sheets (Metricas + Audiencia_General)
+export const fetchGoogleSheetsFullData = async (): Promise<LiveGoogleSheetsPayload> => {
   try {
-    console.log('[GoogleSheetsService] Leyendo métricas reales en tiempo real desde:', GOOGLE_SHEETS_READ_ENDPOINT);
+    console.log('[GoogleSheetsService] Leyendo datos reales en tiempo real desde:', GOOGLE_SHEETS_READ_ENDPOINT);
     const response = await fetch(GOOGLE_SHEETS_READ_ENDPOINT, {
       method: 'GET',
       headers: {
@@ -227,17 +425,33 @@ export const fetchGoogleSheetsMetrics = async (): Promise<UniversalRecord[]> => 
     const json: GoogleSheetsResponse = await response.json();
     console.log('[GoogleSheetsService] Respuesta recibida de Google Sheets:', json);
 
+    let metricRecords: UniversalRecord[] = [];
+    let audienceRecords: AudienceRecord[] = [];
+
+    // 1. Mapeo de la solapa 'Metricas'
     if (json && Array.isArray(json.data) && json.data.length > 0) {
-      const records = json.data.map((row, idx) => transformSheetsRowToUniversalRecord(row, idx));
-      console.log(`[GoogleSheetsService] Se mapearon exitosamente ${records.length} registros reales de Google Sheets:`, records);
-      return records;
+      metricRecords = json.data.map((row, idx) => transformSheetsRowToUniversalRecord(row, idx));
+      console.log(`[GoogleSheetsService] Se mapearon exitosamente ${metricRecords.length} registros de 'Metricas':`, metricRecords);
     }
 
-    return [];
+    // 2. Mapeo de la solapa 'Audiencia_General'
+    const rawAudience = json?.audiencia || json?.audiencia_general || json?.dataAudiencia;
+    if (Array.isArray(rawAudience) && rawAudience.length > 0) {
+      audienceRecords = rawAudience.map((row, idx) => transformSheetsRowToAudienceRecord(row, idx));
+      console.log(`[GoogleSheetsService] Se mapearon exitosamente ${audienceRecords.length} registros de 'Audiencia_General':`, audienceRecords);
+    }
+
+    return { metricRecords, audienceRecords };
   } catch (error) {
-    console.error('[GoogleSheetsService] Error al obtener métricas reales de Google Sheets:', error);
-    return [];
+    console.error('[GoogleSheetsService] Error al obtener datos de Google Sheets:', error);
+    return { metricRecords: [], audienceRecords: [] };
   }
+};
+
+// Real-Time Fetch from Google Sheets (backward compatibility)
+export const fetchGoogleSheetsMetrics = async (): Promise<UniversalRecord[]> => {
+  const full = await fetchGoogleSheetsFullData();
+  return full.metricRecords;
 };
 
 // Syncing metrics back to Google Sheets Webhook

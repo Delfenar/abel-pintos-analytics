@@ -35,9 +35,13 @@ import {
 import { 
   sendMetricsToGoogleSheets, 
   fetchGoogleSheetsMetrics,
+  fetchGoogleSheetsFullData,
   computeChannelAudienceMetrics,
+  getAudienceEvolutionSeries,
   extractCampaignsFromRecords,
-  ChannelAudienceMetric
+  ChannelAudienceMetric,
+  AudienceRecord,
+  AudienceEvolutionPoint
 } from '../services/googleSheetsService';
 import { ToastNotification, ToastState } from '../components/ui/ToastNotification';
 
@@ -103,6 +107,8 @@ interface DashboardContextType {
   isSyncingSheets: boolean;
   syncWithGoogleSheets: () => Promise<void>;
   liveSheetsRecords: UniversalRecord[];
+  liveAudienceRecords: AudienceRecord[];
+  audienceEvolutionSeries: AudienceEvolutionPoint[];
   isLoadingSheets: boolean;
   loadLiveSheetsData: () => Promise<void>;
   channelAudienceMetrics: Record<PlatformName, ChannelAudienceMetric>;
@@ -152,6 +158,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [liveSheetsRecords, setLiveSheetsRecords] = useState<UniversalRecord[]>([]);
+  const [liveAudienceRecords, setLiveAudienceRecords] = useState<AudienceRecord[]>([]);
   const [isLoadingSheets, setIsLoadingSheets] = useState<boolean>(false);
 
   const [isSyncingSheets, setIsSyncingSheets] = useState<boolean>(false);
@@ -191,6 +198,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const addCampaign = (newCamp: CampaignFilter) => {
     setCampaigns(prev => {
+      const exists = prev.some(c => c.id === newCamp.id);
+      if (exists) return prev;
       const updated = [...prev, newCamp];
       saveCampaignsToStorage(updated);
       return updated;
@@ -233,11 +242,14 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const loadLiveSheetsData = async () => {
     setIsLoadingSheets(true);
     try {
-      const records = await fetchGoogleSheetsMetrics();
-      if (records && records.length > 0) {
-        setLiveSheetsRecords(records);
-        const dynamicCampaigns = extractCampaignsFromRecords(records);
+      const { metricRecords, audienceRecords } = await fetchGoogleSheetsFullData();
+      if (metricRecords && metricRecords.length > 0) {
+        setLiveSheetsRecords(metricRecords);
+        const dynamicCampaigns = extractCampaignsFromRecords(metricRecords);
         setCampaigns(dynamicCampaigns);
+      }
+      if (audienceRecords && audienceRecords.length > 0) {
+        setLiveAudienceRecords(audienceRecords);
       }
     } catch (e) {
       console.error('Error al obtener datos reales de Google Sheets:', e);
@@ -270,11 +282,15 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [liveSheetsRecords, activeCampaign]);
 
   // Channel Audience Metrics (Visualizaciones, Interacciones, Contenidos_Compartidos, Nuevos_Seguidores)
-  // Strictly decoupled from campaign publication metric totals
+  // Groups by platform, takes ONLY the latest snapshot from 'Audiencia_General' without summing multiple dates
   const channelAudienceMetrics: Record<PlatformName, ChannelAudienceMetric> = useMemo(() => {
-    const activeDataset = liveSheetsRecords.length > 0 ? liveSheetsRecords : [];
-    return computeChannelAudienceMetrics(activeDataset);
-  }, [liveSheetsRecords]);
+    return computeChannelAudienceMetrics(liveSheetsRecords, liveAudienceRecords);
+  }, [liveSheetsRecords, liveAudienceRecords]);
+
+  // Full Historical Time Series for Audience Evolution Charts
+  const audienceEvolutionSeries: AudienceEvolutionPoint[] = useMemo(() => {
+    return getAudienceEvolutionSeries(liveAudienceRecords);
+  }, [liveAudienceRecords]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -390,6 +406,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isSyncingSheets,
         syncWithGoogleSheets,
         liveSheetsRecords,
+        liveAudienceRecords,
+        audienceEvolutionSeries,
         isLoadingSheets,
         loadLiveSheetsData,
         channelAudienceMetrics,
