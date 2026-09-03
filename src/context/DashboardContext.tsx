@@ -27,7 +27,10 @@ import {
   UniversalSearchAggregation, 
   MASTER_INDEXABLE_RECORDS,
   UniversalRecord,
-  PlatformName
+  PlatformName,
+  getConsolidatedMetrics,
+  ConsolidatedMetrics,
+  normalizeContentId
 } from '../services/searchEngineService';
 import { 
   sendMetricsToGoogleSheets, 
@@ -58,6 +61,7 @@ interface DashboardContextType {
   setCustomComparisonType: (type: CustomComparisonType) => void;
   activeCampaign: CampaignId;
   setActiveCampaign: (campaign: CampaignId) => void;
+  consolidatedCampaignMetrics: ConsolidatedMetrics;
   campaigns: CampaignFilter[];
   addCampaign: (newCamp: CampaignFilter) => void;
   campaignSearchQuery: string;
@@ -259,7 +263,14 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return searchUniversalRecords(searchQuery, activeDataset);
   }, [searchQuery, liveSheetsRecords]);
 
+  // Immutable Consolidated Metrics Pipeline (getConsolidatedMetrics)
+  // Strictly deduplicates by normalizeContentId and picks the latest snapshot per publication
+  const consolidatedCampaignMetrics: ConsolidatedMetrics = useMemo(() => {
+    return getConsolidatedMetrics(liveSheetsRecords, activeCampaign);
+  }, [liveSheetsRecords, activeCampaign]);
+
   // Channel Audience Metrics (Visualizaciones, Interacciones, Contenidos_Compartidos, Nuevos_Seguidores)
+  // Strictly decoupled from campaign publication metric totals
   const channelAudienceMetrics: Record<PlatformName, ChannelAudienceMetric> = useMemo(() => {
     const activeDataset = liveSheetsRecords.length > 0 ? liveSheetsRecords : [];
     return computeChannelAudienceMetrics(activeDataset);
@@ -337,6 +348,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setCustomComparisonType,
         activeCampaign,
         setActiveCampaign,
+        consolidatedCampaignMetrics,
         campaigns,
         addCampaign,
         campaignSearchQuery,

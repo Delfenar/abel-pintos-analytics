@@ -4,6 +4,7 @@ import {
   UniversalSearchAggregation, 
   UniversalRecord, 
   PlatformName,
+  normalizeContentId,
   getContentItemKey
 } from '../../services/searchEngineService';
 import { 
@@ -75,7 +76,7 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
   const measurementCounts = React.useMemo(() => {
     const map = new Map<string, number>();
     (aggregation.allHistoryRecords || []).forEach(r => {
-      const key = getContentItemKey(r);
+      const key = normalizeContentId(r);
       map.set(key, (map.get(key) || 0) + 1);
     });
     return map;
@@ -615,7 +616,7 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 bg-slate-900/60">
                   {displayedRecords.map((item) => {
-                    const itemKey = getContentItemKey(item);
+                    const itemKey = normalizeContentId(item);
                     const historyCount = measurementCounts.get(itemKey) || 1;
 
                     return (
@@ -724,7 +725,7 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
             {displayedRecords.map((rec) => {
               const metrics = rec.metricas;
               const impact = metrics.reproducciones + metrics.alcance;
-              const itemKey = getContentItemKey(rec);
+              const itemKey = normalizeContentId(rec);
               const historyCount = measurementCounts.get(itemKey) || 1;
 
               return (

@@ -469,47 +469,119 @@ const GENERIC_EXCLUDED_TERMS = new Set([
 ]);
 
 /**
- * Helper to generate a consistent unique key for a publication / content item.
- * Uses the normalized publication URL (Link) or a normalized fallback combination of "Plataforma:::Titulo".
+ * 1. Normalización Estricta de Identificadores (Sanitización):
+ * Agrupa mediciones del mismo contenido eliminando URL query parameters y trailing slashes.
+ * 
+ * Reglas:
+ * - Si existe 'Link' (o enlacePublicacion/Enlace/link):
+ *   * Elimina parámetros de consulta (?igsh=, ?si=, #, etc.)
+ *   * Elimina barras inclinadas finales (trailing slashes)
+ *   * Convierte a minúsculas y elimina espacios (.trim().toLowerCase())
+ * - Si no hay 'Link':
+ *   * Combina '${Plataforma.trim().toLowerCase()}_${Titulo.trim().toLowerCase()}'
  */
-export const getContentItemKey = (record: UniversalRecord): string => {
-  if (record.enlacePublicacion && record.enlacePublicacion.trim().length > 5) {
-    return record.enlacePublicacion.trim().toLowerCase();
+export const normalizeContentId = (
+  row: UniversalRecord | { Link?: string; link?: string; Enlace?: string; enlace?: string; enlacePublicacion?: string; Plataforma?: string; plataforma?: string; Titulo?: string; titulo?: string }
+): string => {
+  if (!row) return '';
+
+  const rawLink = (row as any).enlacePublicacion || (row as any).Link || (row as any).link || (row as any).Enlace || (row as any).enlace;
+
+  if (rawLink && typeof rawLink === 'string' && rawLink.trim().length > 0) {
+    let cleanUrl = rawLink.trim().toLowerCase();
+    // 1. Elimina parámetros de consulta (?igsh=, ?si=, etc.) y fragmentos hash (#)
+    cleanUrl = cleanUrl.split('?')[0].split('#')[0].trim();
+    // 2. Elimina barras inclinadas finales (trailing slashes)
+    cleanUrl = cleanUrl.replace(/\/+$/, '').trim();
+
+    if (cleanUrl.length > 5) {
+      return cleanUrl;
+    }
   }
-  return `${record.plataforma.toLowerCase()}:::${record.titulo.trim().toLowerCase()}`;
+
+  // Fallback: Si no hay link, combina Plataforma + Titulo sanitizados
+  const rawPlat = (row as any).plataforma || (row as any).Plataforma || '';
+  const rawTit = (row as any).titulo || (row as any).Titulo || '';
+
+  const plataforma = String(rawPlat).trim().toLowerCase();
+  const titulo = String(rawTit).trim().toLowerCase();
+
+  return `${plataforma}_${titulo}`;
 };
 
+// Backwards-compatible alias for getContentItemKey
+export const getContentItemKey = normalizeContentId;
+
+export interface ConsolidatedMetrics {
+  totalViews: number;
+  totalReach: number;
+  totalInteractions: number;
+  totalCombinedImpact: number;
+  uniqueContentsCount: number;
+  consolidatedRecords: UniversalRecord[];
+  allHistoryRecords: UniversalRecord[];
+}
+
 /**
- * Consolidates a list of records by keeping EXCLUSIVELY the latest snapshot (most recent date)
- * for each unique publication item.
- * 
- * Rules:
- * 1. Groups records by unique content item key (Link or Titulo + Plataforma).
- * 2. Sorts each group by 'Fecha' descending.
- * 3. Returns the single most recent record for each unique item.
+ * 2. Pipeline de Agregación Inmutable (getConsolidatedMetrics):
+ * Calcula los totales globales o de un tema/campaña (ej. "Ibuprofeno"):
+ * - Paso 1: Filtra las filas donde 'Tema_Campania' coincida con la campaña solicitada.
+ * - Paso 2: Agrupa por 'normalizeContentId'.
+ * - Paso 3: Dentro de cada grupo, ordena por 'Fecha' (timestamp) y toma ÚNICAMENTE el registro con la fecha más reciente.
+ * - Paso 4: Reduce la lista final de registros únicos para calcular:
+ *   * totalViews = sum(Reproducciones)
+ *   * totalReach = sum(Alcance)
+ *   * totalInteractions = sum(Interacciones)
+ *   * totalCombinedImpact = totalViews + totalReach
  */
-export const getLatestSnapshotsByItem = (records: UniversalRecord[]): UniversalRecord[] => {
-  if (!records || records.length === 0) return [];
+export const getConsolidatedMetrics = (
+  records: UniversalRecord[],
+  filtroCampania?: string
+): ConsolidatedMetrics => {
+  if (!records || records.length === 0) {
+    return {
+      totalViews: 0,
+      totalReach: 0,
+      totalInteractions: 0,
+      totalCombinedImpact: 0,
+      uniqueContentsCount: 0,
+      consolidatedRecords: [],
+      allHistoryRecords: []
+    };
+  }
 
-  const groups = new Map<string, UniversalRecord[]>();
-
-  records.forEach((record) => {
-    const key = getContentItemKey(record);
-    if (!groups.has(key)) {
-      groups.set(key, []);
+  // Paso 1: Filtra las filas donde Tema_Campania coincida exactamente con la campaña solicitada
+  const filteredRows = records.filter(r => {
+    if (!filtroCampania || filtroCampania === 'all' || filtroCampania.trim() === '') {
+      return true;
     }
-    groups.get(key)!.push(record);
+    const camp = (r.campania || '').trim().toLowerCase();
+    const query = filtroCampania.trim().toLowerCase();
+    const cleanCampId = camp.replace(/[^a-z0-9]/g, '_');
+    const cleanQueryId = query.replace(/[^a-z0-9]/g, '_');
+
+    return camp === query || cleanCampId === cleanQueryId || isStrictMatch(r.campania, query) || isStrictMatch(r.titulo, query);
   });
 
-  const latestSnapshots: UniversalRecord[] = [];
+  // Paso 2: Agrupa por normalizeContentId
+  const groups = new Map<string, UniversalRecord[]>();
+  filteredRows.forEach(row => {
+    const contentId = normalizeContentId(row);
+    if (!groups.has(contentId)) {
+      groups.set(contentId, []);
+    }
+    groups.get(contentId)!.push(row);
+  });
 
-  groups.forEach((groupRecords) => {
-    // Sort descending by date (latest date first)
-    const sorted = [...groupRecords].sort((a, b) => {
-      const dateA = new Date(a.fecha).getTime();
-      const dateB = new Date(b.fecha).getTime();
-      if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) {
-        return dateB - dateA;
+  // Paso 3: Dentro de cada grupo, ordena por Fecha (timestamp) y toma ÚNICAMENTE el registro con la fecha más reciente
+  const consolidatedRecords: UniversalRecord[] = [];
+  groups.forEach((groupRows) => {
+    // Inmutable sort descending by date timestamp
+    const sorted = [...groupRows].sort((a, b) => {
+      const timeA = new Date(a.fecha).getTime();
+      const timeB = new Date(b.fecha).getTime();
+      if (!isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+        return timeB - timeA;
       }
       if (a.fecha !== b.fecha) {
         return b.fecha.localeCompare(a.fecha);
@@ -518,29 +590,45 @@ export const getLatestSnapshotsByItem = (records: UniversalRecord[]): UniversalR
     });
 
     if (sorted[0]) {
-      latestSnapshots.push(sorted[0]);
+      consolidatedRecords.push(sorted[0]);
     }
   });
 
-  return latestSnapshots;
+  // Paso 4: Reduce la lista final de registros únicos para calcular métricas consolidadas
+  const totalViews = consolidatedRecords.reduce((sum, r) => sum + Number(r.metricas?.reproducciones || (r.metricas as any)?.streams || (r.metricas as any)?.views || 0), 0);
+  const totalReach = consolidatedRecords.reduce((sum, r) => sum + Number(r.metricas?.alcance || (r.metricas as any)?.reach || 0), 0);
+  const totalInteractions = consolidatedRecords.reduce((sum, r) => sum + Number(r.metricas?.interacciones || 0), 0);
+  const totalCombinedImpact = totalViews + totalReach;
+
+  return {
+    totalViews,
+    totalReach,
+    totalInteractions,
+    totalCombinedImpact,
+    uniqueContentsCount: consolidatedRecords.length,
+    consolidatedRecords,
+    allHistoryRecords: filteredRows
+  };
+};
+
+/**
+ * Consolidates a list of records by keeping EXCLUSIVELY the latest snapshot (most recent date)
+ * for each unique publication item using normalizeContentId.
+ */
+export const getLatestSnapshotsByItem = (records: UniversalRecord[]): UniversalRecord[] => {
+  return getConsolidatedMetrics(records, 'all').consolidatedRecords;
 };
 
 // Exact Calculation helper for Impacto Total (Streams & Alcance) using Latest Snapshots
 export const calcularImpactoTotal = (itemsFiltrados: UniversalRecord[]): number => {
-  const latestItems = getLatestSnapshotsByItem(itemsFiltrados);
-  return latestItems.reduce((acumulador, item) => {
-    const reproducciones = Number(item.metricas?.reproducciones || (item.metricas as any)?.streams || (item.metricas as any)?.views || 0);
-    const alcance = Number(item.metricas?.alcance || (item.metricas as any)?.reach || 0);
-    return acumulador + reproducciones + alcance;
-  }, 0);
+  const consolidated = getConsolidatedMetrics(itemsFiltrados, 'all');
+  return consolidated.totalCombinedImpact;
 };
 
 // Exact Calculation helper for Interacciones Totales using Latest Snapshots
 export const calcularInteraccionesTotales = (itemsFiltrados: UniversalRecord[]): number => {
-  const latestItems = getLatestSnapshotsByItem(itemsFiltrados);
-  return latestItems.reduce((acumulador, item) => {
-    return acumulador + Number(item.metricas?.interacciones || 0);
-  }, 0);
+  const consolidated = getConsolidatedMetrics(itemsFiltrados, 'all');
+  return consolidated.totalInteractions;
 };
 
 // Universal Relational Search Engine with Strict Filtering & Latest Snapshot Aggregation
