@@ -1,11 +1,30 @@
 import React from 'react';
 import { useDashboard } from '../../context/DashboardContext';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { Activity, Flame, Heart, MessageSquare, Share2, Eye, Play, Sparkles, Music2, Video, ArrowUpRight } from 'lucide-react';
+import { 
+  Activity, 
+  Flame, 
+  Heart, 
+  MessageSquare, 
+  Share2, 
+  Eye, 
+  Sparkles, 
+  ShieldCheck, 
+  Users, 
+  ExternalLink, 
+  Music, 
+  Youtube, 
+  Instagram, 
+  Video, 
+  Facebook, 
+  Twitter, 
+  AtSign 
+} from 'lucide-react';
 import { BlackPantherIcon } from './BlackPantherIcon';
+import { getLatestSnapshotsByItem, PlatformName } from '../../services/searchEngineService';
 
 export const LiveDailyPulse: React.FC = () => {
-  const { dateRange } = useDashboard();
+  const { dateRange, liveSheetsRecords, consolidatedCampaignMetrics } = useDashboard();
 
   // Hourly pulse data for the last 24 hours (00:00 to 23:00)
   const hourlyData = [
@@ -23,6 +42,46 @@ export const LiveDailyPulse: React.FC = () => {
     { hour: '22:00', streams: 78900, interacciones: 15200 },
     { hour: '23:59', streams: 45300, interacciones: 8900 },
   ];
+
+  const platformIcons: Record<string, React.ReactNode> = {
+    Spotify: <Music className="w-3.5 h-3.5 text-emerald-400" />,
+    YouTube: <Youtube className="w-3.5 h-3.5 text-red-500" />,
+    Instagram: <Instagram className="w-3.5 h-3.5 text-pink-400" />,
+    TikTok: <Video className="w-3.5 h-3.5 text-cyan-400" />,
+    Facebook: <Facebook className="w-3.5 h-3.5 text-blue-400" />,
+    X: <Twitter className="w-3.5 h-3.5 text-sky-400" />,
+    Threads: <AtSign className="w-3.5 h-3.5 text-slate-200" />,
+  };
+
+  const platformGradients: Record<string, string> = {
+    Spotify: 'border-emerald-500/40 bg-gradient-to-b from-emerald-950/30 via-slate-900/90 to-slate-950',
+    YouTube: 'border-red-500/40 bg-gradient-to-b from-red-950/30 via-slate-900/90 to-slate-950',
+    Instagram: 'border-pink-500/40 bg-gradient-to-b from-pink-950/30 via-slate-900/90 to-slate-950',
+    TikTok: 'border-cyan-500/40 bg-gradient-to-b from-cyan-950/30 via-slate-900/90 to-slate-950',
+    Facebook: 'border-blue-500/40 bg-gradient-to-b from-blue-950/30 via-slate-900/90 to-slate-950',
+    X: 'border-sky-500/40 bg-gradient-to-b from-sky-950/30 via-slate-900/90 to-slate-950',
+    Threads: 'border-slate-500/40 bg-gradient-to-b from-slate-800/30 via-slate-900/90 to-slate-950',
+  };
+
+  // 1. Dynamic Top Performer Selection from real Google Sheets 'Metricas'
+  const topPerformer = React.useMemo(() => {
+    if (!liveSheetsRecords || liveSheetsRecords.length === 0) return null;
+    const latestSnapshots = getLatestSnapshotsByItem(liveSheetsRecords);
+    if (latestSnapshots.length === 0) return null;
+
+    return [...latestSnapshots].sort((a, b) => {
+      const reprodA = Number(a.metricas?.reproducciones || 0);
+      const alcanceA = Number(a.metricas?.alcance || 0);
+      const impactA = reprodA + alcanceA;
+
+      const reprodB = Number(b.metricas?.reproducciones || 0);
+      const alcanceB = Number(b.metricas?.alcance || 0);
+      const impactB = reprodB + alcanceB;
+
+      if (impactB !== impactA) return impactB - impactA;
+      return Number(b.metricas?.interacciones || 0) - Number(a.metricas?.interacciones || 0);
+    })[0];
+  }, [liveSheetsRecords]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -109,76 +168,132 @@ export const LiveDailyPulse: React.FC = () => {
 
         <div className="flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-800">
           <span>Pico de actividad registrado a las <strong>20:00 hs</strong> (Shows & Primetime).</span>
-          <span className="text-emerald-400 font-bold font-mono">563,800 impactos totales hoy</span>
+          <span className="text-emerald-400 font-bold font-mono">
+            {consolidatedCampaignMetrics.totalCombinedImpact > 0
+              ? `${consolidatedCampaignMetrics.totalCombinedImpact.toLocaleString()} impactos acumulados`
+              : '563,800 impactos totales hoy'}
+          </span>
         </div>
       </div>
 
-      {/* Live Featured Content of the Moment (1 col) */}
-      <div className="glass-panel p-6 rounded-3xl border border-pink-500/30 bg-gradient-to-b from-slate-900/90 to-slate-950 flex flex-col justify-between space-y-4">
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
-              DESTACADO ÚLTIMAS 24 HS
-            </span>
-            <span className="text-[11px] text-slate-400">Instagram Reel</span>
+      {/* 2. Top Performer Highlight Card (1 col) — 100% Real from Google Sheets */}
+      {topPerformer ? (
+        <div className={`glass-panel p-6 rounded-3xl border ${platformGradients[topPerformer.plataforma] || 'border-gold-400/40 bg-slate-900/90'} flex flex-col justify-between space-y-4 shadow-xl`}>
+          <div className="space-y-3">
+            {/* Header row: Badge + Platform & Format Pill */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-gold-400/20 text-gold-300 border border-gold-400/40 flex items-center gap-1.5 shadow-sm">
+                <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                TOP PERFORMER — MAYOR IMPACTO
+              </span>
+
+              <div className="flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] font-bold text-slate-200">
+                  {platformIcons[topPerformer.plataforma] || <Music className="w-3 h-3 text-gold-400" />}
+                  <span>{topPerformer.plataforma}</span>
+                </span>
+
+                <span className="px-2 py-0.5 rounded-lg bg-gold-400/10 border border-gold-400/20 text-gold-300 text-[10px] font-semibold">
+                  {topPerformer.tipoContenido}
+                </span>
+              </div>
+            </div>
+
+            {/* Title & Campaign Info */}
+            <div>
+              <h4 className="text-base font-black text-slate-100 line-clamp-2 leading-snug hover:text-gold-300 transition-colors">
+                {topPerformer.titulo}
+              </h4>
+              <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-slate-400">
+                {topPerformer.campania && (
+                  <span className="px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700/60 text-slate-300 text-[10px] font-semibold flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5 text-gold-400" />
+                    {topPerformer.campania}
+                  </span>
+                )}
+                {topPerformer.fecha && (
+                  <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" />
+                    Vigente al {topPerformer.fecha}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          <h4 className="text-base font-black text-slate-100 line-clamp-2 leading-snug">
-            ✨ GIRA 30 ANIVERSARIO: ¡Nuevas fechas Buenos Aires & Rosario!
-          </h4>
-          <p className="text-xs text-slate-400 mt-1">
-            Publicado hace 4 horas | Audio: <strong>Oncemil (En Vivo)</strong>
+          {/* Real Dynamic KPI Counters */}
+          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+            {/* 1. Reproducciones */}
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-400 flex items-center gap-1.5 font-medium">
+                <Eye className="w-3.5 h-3.5 text-gold-400" />
+                Reproducciones
+              </span>
+              <span className="font-mono font-black text-gold-300 text-sm">
+                {(topPerformer.metricas?.reproducciones || 0).toLocaleString()}
+              </span>
+            </div>
+
+            {/* 2. Alcance */}
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-400 flex items-center gap-1.5 font-medium">
+                <Users className="w-3.5 h-3.5 text-sky-400" />
+                Alcance Directo
+              </span>
+              <span className="font-mono font-black text-sky-300 text-sm">
+                {(topPerformer.metricas?.alcance || 0).toLocaleString()}
+              </span>
+            </div>
+
+            {/* 3. Interacciones */}
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-400 flex items-center gap-1.5 font-medium">
+                <Heart className="w-3.5 h-3.5 text-rose-400" />
+                Interacciones
+              </span>
+              <span className="font-mono font-black text-rose-300 text-sm">
+                {(topPerformer.metricas?.interacciones || 0).toLocaleString()}
+              </span>
+            </div>
+
+            {/* 4. Impacto Total Combinado */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+              <span className="text-xs text-slate-200 font-bold flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                Impacto Total
+              </span>
+              <span className="font-mono font-black text-emerald-400 text-sm">
+                {((topPerformer.metricas?.reproducciones || 0) + (topPerformer.metricas?.alcance || 0)).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {/* Action Button: Interactive Link to official publication */}
+          {topPerformer.enlacePublicacion ? (
+            <a
+              href={topPerformer.enlacePublicacion}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gold-400/10 hover:bg-gold-400/20 border border-gold-400/30 text-gold-300 hover:text-gold-200 text-xs font-bold transition-all shadow-sm group cursor-pointer"
+            >
+              <span>Ver Publicación Oficial ({topPerformer.plataforma})</span>
+              <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </a>
+          ) : (
+            <div className="text-[11px] text-slate-400 italic text-center">
+              Registro oficial verificado desde Google Sheets
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="glass-panel p-6 rounded-3xl border border-slate-800 bg-slate-900/60 flex flex-col items-center justify-center text-center space-y-3 shadow-xl">
+          <Sparkles className="w-8 h-8 text-gold-400/60 animate-pulse" />
+          <h4 className="text-base font-bold text-slate-200">Aguardando datos de publicaciones</h4>
+          <p className="text-xs text-slate-400 max-w-xs">
+            Las publicaciones con mayor impacto aparecerán aquí automáticamente al sincronizar con Google Sheets.
           </p>
         </div>
-
-        {/* Live Counters */}
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 flex items-center gap-1.5">
-              <Eye className="w-4 h-4 text-gold-400" />
-              Reproducciones en Vivo
-            </span>
-            <span className="font-mono font-black text-slate-100 text-sm">
-              184,500
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 flex items-center gap-1.5">
-              <Heart className="w-4 h-4 text-rose-400" />
-              Likes & Reacciones
-            </span>
-            <span className="font-mono font-black text-slate-100 text-sm">
-              31,200
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 flex items-center gap-1.5">
-              <MessageSquare className="w-4 h-4 text-sky-400" />
-              Comentarios de Fans
-            </span>
-            <span className="font-mono font-black text-slate-100 text-sm">
-              2,450
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-            <span className="text-xs text-slate-300 font-bold flex items-center gap-1.5">
-              <Flame className="w-4 h-4 text-amber-400" />
-              Engagement del Post
-            </span>
-            <span className="font-mono font-black text-emerald-400 text-sm">
-              18.2%
-            </span>
-          </div>
-        </div>
-
-        <div className="text-[11px] text-slate-400 italic">
-          Tracción excepcional impulsada por la venta anticipada de entradas.
-        </div>
-      </div>
+      )}
     </div>
   );
 };
