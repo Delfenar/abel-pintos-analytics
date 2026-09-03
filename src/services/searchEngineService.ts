@@ -59,7 +59,10 @@ export interface UniversalSearchAggregation {
   topPlatform: PlatformName;
   platformCounts: Record<PlatformName, number>;
   groupedResults: Record<PlatformName, UniversalRecord[]>;
-  allResults: UniversalRecord[];
+  allResults: UniversalRecord[]; // Latest snapshots by default
+  latestSnapshots: UniversalRecord[]; // Consolidated latest snapshots per unique publication
+  allHistoryRecords: UniversalRecord[]; // Full matching records with complete history
+  hasMultipleSnapshots: boolean; // Indicates if there are historical progression rows
   dualMetrics: DualMetricsCalculation;
 }
 
@@ -465,24 +468,82 @@ const GENERIC_EXCLUDED_TERMS = new Set([
   'abel', 'pintos', 'abel pintos', '2026', 'musica', 'cancion', 'single', 'artista', 'oficial'
 ]);
 
-// Exact Calculation helper for Impacto Total (Streams & Alcance)
+/**
+ * Helper to generate a consistent unique key for a publication / content item.
+ * Uses the normalized publication URL (Link) or a normalized fallback combination of "Plataforma:::Titulo".
+ */
+export const getContentItemKey = (record: UniversalRecord): string => {
+  if (record.enlacePublicacion && record.enlacePublicacion.trim().length > 5) {
+    return record.enlacePublicacion.trim().toLowerCase();
+  }
+  return `${record.plataforma.toLowerCase()}:::${record.titulo.trim().toLowerCase()}`;
+};
+
+/**
+ * Consolidates a list of records by keeping EXCLUSIVELY the latest snapshot (most recent date)
+ * for each unique publication item.
+ * 
+ * Rules:
+ * 1. Groups records by unique content item key (Link or Titulo + Plataforma).
+ * 2. Sorts each group by 'Fecha' descending.
+ * 3. Returns the single most recent record for each unique item.
+ */
+export const getLatestSnapshotsByItem = (records: UniversalRecord[]): UniversalRecord[] => {
+  if (!records || records.length === 0) return [];
+
+  const groups = new Map<string, UniversalRecord[]>();
+
+  records.forEach((record) => {
+    const key = getContentItemKey(record);
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key)!.push(record);
+  });
+
+  const latestSnapshots: UniversalRecord[] = [];
+
+  groups.forEach((groupRecords) => {
+    // Sort descending by date (latest date first)
+    const sorted = [...groupRecords].sort((a, b) => {
+      const dateA = new Date(a.fecha).getTime();
+      const dateB = new Date(b.fecha).getTime();
+      if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) {
+        return dateB - dateA;
+      }
+      if (a.fecha !== b.fecha) {
+        return b.fecha.localeCompare(a.fecha);
+      }
+      return (b.metricas.reproducciones + b.metricas.alcance) - (a.metricas.reproducciones + a.metricas.alcance);
+    });
+
+    if (sorted[0]) {
+      latestSnapshots.push(sorted[0]);
+    }
+  });
+
+  return latestSnapshots;
+};
+
+// Exact Calculation helper for Impacto Total (Streams & Alcance) using Latest Snapshots
 export const calcularImpactoTotal = (itemsFiltrados: UniversalRecord[]): number => {
-  return itemsFiltrados.reduce((acumulador, item) => {
-    // Suma únicamente streams, vistas y alcance directo de las publicaciones encontradas
+  const latestItems = getLatestSnapshotsByItem(itemsFiltrados);
+  return latestItems.reduce((acumulador, item) => {
     const reproducciones = Number(item.metricas?.reproducciones || (item.metricas as any)?.streams || (item.metricas as any)?.views || 0);
     const alcance = Number(item.metricas?.alcance || (item.metricas as any)?.reach || 0);
     return acumulador + reproducciones + alcance;
   }, 0);
 };
 
-// Exact Calculation helper for Interacciones Totales
+// Exact Calculation helper for Interacciones Totales using Latest Snapshots
 export const calcularInteraccionesTotales = (itemsFiltrados: UniversalRecord[]): number => {
-  return itemsFiltrados.reduce((acumulador, item) => {
+  const latestItems = getLatestSnapshotsByItem(itemsFiltrados);
+  return latestItems.reduce((acumulador, item) => {
     return acumulador + Number(item.metricas?.interacciones || 0);
   }, 0);
 };
 
-// Universal Relational Search Engine with Strict Filtering
+// Universal Relational Search Engine with Strict Filtering & Latest Snapshot Aggregation
 export const searchUniversalRecords = (
   rawQuery: string,
   records: UniversalRecord[] = MASTER_INDEXABLE_RECORDS
@@ -522,6 +583,9 @@ export const searchUniversalRecords = (
       platformCounts: emptyCounts,
       groupedResults: emptyGrouped,
       allResults: [],
+      latestSnapshots: [],
+      allHistoryRecords: [],
+      hasMultipleSnapshots: false,
       dualMetrics: {
         filteredImpact: 0,
         globalBenchmarkImpact: 0,
@@ -549,7 +613,7 @@ export const searchUniversalRecords = (
   const isPlatformSearch = platformKeywords[query] !== undefined;
   const targetPlatform = platformKeywords[query];
 
-  // Perform Strict Filtering
+  // Step 1: Perform Strict Filtering across all records
   const matchedRecords = records.filter(record => {
     // 1. If explicit platform search, return all records of that platform
     if (isPlatformSearch && targetPlatform) {
@@ -577,7 +641,11 @@ export const searchUniversalRecords = (
     return titleMatch || tagMatch || campaignMatch || albumMatch || cityMatch;
   });
 
-  // Calculate Aggregations strictly on matched records without any baseline channel follower counts
+  // Steps 2 & 3: Group by unique content item and select the single latest snapshot row
+  const latestSnapshots = getLatestSnapshotsByItem(matchedRecords);
+  const hasMultipleSnapshots = matchedRecords.length > latestSnapshots.length;
+
+  // Group latest snapshots by platform
   const platformCounts: Record<PlatformName, number> = {
     Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
   };
@@ -589,7 +657,7 @@ export const searchUniversalRecords = (
     Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
   };
 
-  matchedRecords.forEach(rec => {
+  latestSnapshots.forEach(rec => {
     platformCounts[rec.plataforma] = (platformCounts[rec.plataforma] || 0) + 1;
     groupedResults[rec.plataforma].push(rec);
 
@@ -597,19 +665,20 @@ export const searchUniversalRecords = (
     platformImpactTotals[rec.plataforma] += impact;
   });
 
-  const totalReproducciones = matchedRecords.reduce((acc, item) => acc + Number(item.metricas?.reproducciones || 0), 0);
-  const totalAlcance = matchedRecords.reduce((acc, item) => acc + Number(item.metricas?.alcance || 0), 0);
+  // Step 4: Final KPI summation strictly on latest snapshots
+  const totalReproducciones = latestSnapshots.reduce((acc, item) => acc + Number(item.metricas?.reproducciones || 0), 0);
+  const totalAlcance = latestSnapshots.reduce((acc, item) => acc + Number(item.metricas?.alcance || 0), 0);
   const totalImpactoCombinado = totalReproducciones + totalAlcance;
   const totalImpacts = totalImpactoCombinado;
-  const totalInteractions = matchedRecords.reduce((acc, item) => acc + Number(item.metricas?.interacciones || 0), 0);
-  const totalSaves = matchedRecords.reduce((acc, r) => acc + Number(r.metricas?.guardados || 0), 0);
-  const totalClicks = matchedRecords.reduce((acc, r) => acc + Number(r.metricas?.clics || 0), 0);
+  const totalInteractions = latestSnapshots.reduce((acc, item) => acc + Number(item.metricas?.interacciones || 0), 0);
+  const totalSaves = latestSnapshots.reduce((acc, r) => acc + Number(r.metricas?.guardados || 0), 0);
+  const totalClicks = latestSnapshots.reduce((acc, r) => acc + Number(r.metricas?.clics || 0), 0);
 
-  // Platform with highest volume of reproducciones / streams
+  // Platform with highest volume of reproducciones / streams among latest snapshots
   const platformReproduccionesTotals: Record<PlatformName, number> = {
     Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
   };
-  matchedRecords.forEach(rec => {
+  latestSnapshots.forEach(rec => {
     platformReproduccionesTotals[rec.plataforma] += Number(rec.metricas?.reproducciones || 0);
   });
   const sortedByReproducciones = (Object.entries(platformReproduccionesTotals) as [PlatformName, number][])
@@ -620,7 +689,8 @@ export const searchUniversalRecords = (
     ? sortedByReproducciones[0][0] 
     : (sortedPlatforms[0] && sortedPlatforms[0][1] > 0 ? sortedPlatforms[0][0] : 'Spotify');
 
-  // Global Benchmark Totals across all master records
+  // Global Benchmark Totals across all master records (deduplicated to latest snapshots for fair benchmark)
+  const globalLatestSnapshots = getLatestSnapshotsByItem(records);
   const globalPlatformImpactTotals: Record<PlatformName, number> = {
     Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
   };
@@ -634,7 +704,7 @@ export const searchUniversalRecords = (
   let globalBenchmarkImpact = 0;
   let globalInteractions = 0;
 
-  records.forEach(rec => {
+  globalLatestSnapshots.forEach(rec => {
     const impact = Number(rec.metricas?.reproducciones || 0) + Number(rec.metricas?.alcance || 0);
     const interactions = Number(rec.metricas?.interacciones || 0);
 
@@ -663,7 +733,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.Spotify > 0 
         ? Number(((platformImpactTotals.Spotify / globalPlatformImpactTotals.Spotify) * 100).toFixed(1))
         : 0,
-      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'Spotify').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Spotify').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
       globalInteractions: globalPlatformInteractionTotals.Spotify,
       filteredCount: platformCounts.Spotify,
       globalCount: globalPlatformCounts.Spotify
@@ -674,7 +744,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.YouTube > 0 
         ? Number(((platformImpactTotals.YouTube / globalPlatformImpactTotals.YouTube) * 100).toFixed(1))
         : 0,
-      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'YouTube').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'YouTube').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
       globalInteractions: globalPlatformInteractionTotals.YouTube,
       filteredCount: platformCounts.YouTube,
       globalCount: globalPlatformCounts.YouTube
@@ -685,7 +755,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.Instagram > 0 
         ? Number(((platformImpactTotals.Instagram / globalPlatformImpactTotals.Instagram) * 100).toFixed(1))
         : 0,
-      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'Instagram').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Instagram').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
       globalInteractions: globalPlatformInteractionTotals.Instagram,
       filteredCount: platformCounts.Instagram,
       globalCount: globalPlatformCounts.Instagram
@@ -696,7 +766,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.TikTok > 0 
         ? Number(((platformImpactTotals.TikTok / globalPlatformImpactTotals.TikTok) * 100).toFixed(1))
         : 0,
-      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'TikTok').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'TikTok').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
       globalInteractions: globalPlatformInteractionTotals.TikTok,
       filteredCount: platformCounts.TikTok,
       globalCount: globalPlatformCounts.TikTok
@@ -707,7 +777,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.Facebook > 0 
         ? Number(((platformImpactTotals.Facebook / globalPlatformImpactTotals.Facebook) * 100).toFixed(1))
         : 0,
-      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'Facebook').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Facebook').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
       globalInteractions: globalPlatformInteractionTotals.Facebook,
       filteredCount: platformCounts.Facebook,
       globalCount: globalPlatformCounts.Facebook
@@ -718,7 +788,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.X > 0 
         ? Number(((platformImpactTotals.X / globalPlatformImpactTotals.X) * 100).toFixed(1))
         : 0,
-      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'X').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'X').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
       globalInteractions: globalPlatformInteractionTotals.X,
       filteredCount: platformCounts.X,
       globalCount: globalPlatformCounts.X
@@ -729,7 +799,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.Threads > 0 
         ? Number(((platformImpactTotals.Threads / globalPlatformImpactTotals.Threads) * 100).toFixed(1))
         : 0,
-      filteredInteractions: matchedRecords.filter(r => r.plataforma === 'Threads').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Threads').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
       globalInteractions: globalPlatformInteractionTotals.Threads,
       filteredCount: platformCounts.Threads,
       globalCount: globalPlatformCounts.Threads
@@ -748,7 +818,7 @@ export const searchUniversalRecords = (
 
   return {
     query: rawQuery,
-    totalResults: matchedRecords.length,
+    totalResults: latestSnapshots.length,
     totalImpacts,
     totalReproducciones,
     totalAlcance,
@@ -759,7 +829,10 @@ export const searchUniversalRecords = (
     topPlatform,
     platformCounts,
     groupedResults,
-    allResults: matchedRecords,
+    allResults: latestSnapshots,
+    latestSnapshots,
+    allHistoryRecords: matchedRecords,
+    hasMultipleSnapshots,
     dualMetrics
   };
 };

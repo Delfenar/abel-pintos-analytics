@@ -10,6 +10,7 @@ import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
 import { CAMPAIGNS } from '../../services/mockDataService';
+import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
 import { BlackPantherIcon } from '../ui/BlackPantherIcon';
 import { 
   ResponsiveContainer, 
@@ -61,7 +62,8 @@ export const OverviewView: React.FC = () => {
 
   const allTopContent = React.useMemo(() => {
     if (liveSheetsRecords && liveSheetsRecords.length > 0) {
-      return liveSheetsRecords
+      const latestRecords = getLatestSnapshotsByItem(liveSheetsRecords);
+      return latestRecords
         .filter(r => {
           if (activeCampaign === 'all') return true;
           return r.campania.toLowerCase().replace(/[^a-z0-9]/g, '_') === activeCampaign || r.campania.toLowerCase() === activeCampaign.toLowerCase();

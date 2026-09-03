@@ -6,13 +6,14 @@ import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Instagram, Bookmark, Link2, Sparkles, Heart, MessageSquare, Share2 } from 'lucide-react';
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
+import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
 
 export const InstagramView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.instagram || platformDataMap.instagram;
 
   const instagramContent = React.useMemo(() => {
-    const liveItems = liveSheetsRecords.filter(r => r.plataforma === 'Instagram');
+    const liveItems = getLatestSnapshotsByItem(liveSheetsRecords.filter(r => r.plataforma === 'Instagram'));
     if (liveItems.length > 0) {
       return liveItems.map(r => ({
         id: r.id,

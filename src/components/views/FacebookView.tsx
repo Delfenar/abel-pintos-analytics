@@ -6,13 +6,14 @@ import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { Facebook, DollarSign, MousePointer, Users, ThumbsUp } from 'lucide-react';
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
+import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
 
 export const FacebookView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.facebook || platformDataMap.facebook;
 
   const facebookContent = React.useMemo(() => {
-    const liveItems = liveSheetsRecords.filter(r => r.plataforma === 'Facebook');
+    const liveItems = getLatestSnapshotsByItem(liveSheetsRecords.filter(r => r.plataforma === 'Facebook'));
     if (liveItems.length > 0) {
       return liveItems.map(r => ({
         id: r.id,

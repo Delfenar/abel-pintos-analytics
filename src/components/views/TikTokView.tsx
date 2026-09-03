@@ -6,13 +6,14 @@ import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from 'recharts';
 import { Video, Play, Share2, Heart, Users, Clock } from 'lucide-react';
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
+import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
 
 export const TikTokView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.tiktok || platformDataMap.tiktok;
 
   const tiktokContent = React.useMemo(() => {
-    const liveItems = liveSheetsRecords.filter(r => r.plataforma === 'TikTok');
+    const liveItems = getLatestSnapshotsByItem(liveSheetsRecords.filter(r => r.plataforma === 'TikTok'));
     if (liveItems.length > 0) {
       return liveItems.map(r => ({
         id: r.id,

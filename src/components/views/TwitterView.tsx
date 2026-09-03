@@ -7,13 +7,14 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import { BlackPantherIcon } from '../ui/BlackPantherIcon';
 import { Twitter, Repeat, MessageSquare, Heart, ExternalLink } from 'lucide-react';
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
+import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
 
 export const TwitterView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.twitter || platformDataMap.twitter;
 
   const twitterContent = React.useMemo(() => {
-    const liveItems = liveSheetsRecords.filter(r => r.plataforma === 'X');
+    const liveItems = getLatestSnapshotsByItem(liveSheetsRecords.filter(r => r.plataforma === 'X'));
     if (liveItems.length > 0) {
       return liveItems.map(r => ({
         id: r.id,

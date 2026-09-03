@@ -210,10 +210,15 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({ isOpen, onCl
 
           {/* 4. Detailed Content Breakdown Table with Footer Totals */}
           <div className="space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 print:text-black flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-gold-400 print:text-amber-800" />
-              Desglose de Publicaciones Indexadas y Totales
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 print:text-black flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-gold-400 print:text-amber-800" />
+                Desglose de Publicaciones Indexadas (Último Valor Vigente por Contenido)
+              </h3>
+              <span className="text-[10px] text-emerald-400 print:text-emerald-800 font-bold">
+                ● Consolidación por Snapshot Vigente
+              </span>
+            </div>
             <div className="border border-slate-800 print:border-slate-300 rounded-xl overflow-hidden">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
@@ -222,6 +227,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({ isOpen, onCl
                     <th className="py-2.5 px-3">Plataforma</th>
                     <th className="py-2.5 px-3">Tipo</th>
                     <th className="py-2.5 px-3">Campaña</th>
+                    <th className="py-2.5 px-3">Fecha Vigente</th>
                     <th className="py-2.5 px-3 text-right">Reproducciones</th>
                     <th className="py-2.5 px-3 text-right">Alcance</th>
                     <th className="py-2.5 px-3 text-right">Interacciones</th>
@@ -234,6 +240,9 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({ isOpen, onCl
                       <td className="py-2 px-3 uppercase text-[10px] font-bold">{item.plataforma}</td>
                       <td className="py-2 px-3">{item.tipoContenido}</td>
                       <td className="py-2 px-3 text-slate-400 print:text-slate-600">{item.campania || 'Catálogo'}</td>
+                      <td className="py-2 px-3 font-mono text-[10px] text-emerald-400 print:text-emerald-800 font-bold">
+                        {item.fecha}
+                      </td>
                       <td className="py-2 px-3 text-right font-mono font-bold">{item.metricas.reproducciones.toLocaleString()}</td>
                       <td className="py-2 px-3 text-right font-mono font-bold text-gold-400 print:text-amber-800">{item.metricas.alcance.toLocaleString()}</td>
                       <td className="py-2 px-3 text-right font-mono text-rose-400 print:text-rose-700">{item.metricas.interacciones.toLocaleString()}</td>
@@ -241,7 +250,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({ isOpen, onCl
                   ))}
                   {results.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="py-4 text-center text-slate-500">
+                      <td colSpan={8} className="py-4 text-center text-slate-500">
                         No hay registros directos para esta consulta.
                       </td>
                     </tr>
@@ -251,8 +260,8 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({ isOpen, onCl
                 {results.length > 0 && (
                   <tfoot className="bg-slate-900 print:bg-slate-100 border-t-2 border-gold-400/60 print:border-slate-400">
                     <tr className="text-xs font-black text-slate-100 print:text-black uppercase">
-                      <td colSpan={4} className="py-3 px-3 text-gold-400 print:text-amber-800 font-bold">
-                        TOTALES CONSOLIDADOS ({results.length} publicaciones)
+                      <td colSpan={5} className="py-3 px-3 text-gold-400 print:text-amber-800 font-bold">
+                        TOTALES CONSOLIDADOS ({results.length} publicaciones únicas)
                       </td>
                       <td className="py-3 px-3 text-right font-mono font-bold">
                         {totalReproducciones.toLocaleString()}

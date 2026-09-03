@@ -3,7 +3,8 @@ import { useDashboard } from '../../context/DashboardContext';
 import { 
   UniversalSearchAggregation, 
   UniversalRecord, 
-  PlatformName 
+  PlatformName,
+  getContentItemKey
 } from '../../services/searchEngineService';
 import { 
   Search, 
@@ -38,7 +39,10 @@ import {
   Share2,
   Table as TableIcon,
   LayoutGrid,
-  RotateCw
+  RotateCw,
+  History,
+  ShieldCheck,
+  Clock
 } from 'lucide-react';
 import { BlackPantherIcon } from './BlackPantherIcon';
 import { PrintReportModal } from './PrintReportModal';
@@ -52,6 +56,7 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
   const { loadLiveSheetsData, isLoadingSheets, liveSheetsRecords } = useDashboard();
   const [activeTab, setActiveTab] = useState<PlatformName | 'all'>('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [showFullHistory, setShowFullHistory] = useState<boolean>(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   const platformIcons: Record<PlatformName, React.ReactNode> = {
@@ -66,9 +71,27 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
 
   const platformsList: PlatformName[] = ['Spotify', 'YouTube', 'Instagram', 'TikTok', 'Facebook', 'X', 'Threads'];
 
-  const displayedRecords = activeTab === 'all' 
-    ? aggregation.allResults 
-    : aggregation.groupedResults[activeTab];
+  // Measurement counts map for detecting historical updates per unique publication
+  const measurementCounts = React.useMemo(() => {
+    const map = new Map<string, number>();
+    (aggregation.allHistoryRecords || []).forEach(r => {
+      const key = getContentItemKey(r);
+      map.set(key, (map.get(key) || 0) + 1);
+    });
+    return map;
+  }, [aggregation.allHistoryRecords]);
+
+  // Determine active source dataset (Latest Snapshots vs Full Historical Progression)
+  const sourceDataset = showFullHistory
+    ? (aggregation.allHistoryRecords || aggregation.allResults)
+    : (aggregation.latestSnapshots || aggregation.allResults);
+
+  const displayedRecords = React.useMemo(() => {
+    if (activeTab === 'all') {
+      return sourceDataset;
+    }
+    return sourceDataset.filter(r => r.plataforma === activeTab);
+  }, [sourceDataset, activeTab]);
 
   // 100% Dynamic Calculations for displayed results
   const displayedTotalReproducciones = displayedRecords.reduce((acc, item) => acc + Number(item.metricas?.reproducciones || 0), 0);
@@ -449,11 +472,63 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
 
       {/* 6. Tabla de Desglose de Publicaciones con Fila de Totales al Pie */}
       <div className="space-y-4">
+        {/* Snapshot Consolidation Info Banner & Toggle Bar */}
+        <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-950/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gold-400/10 border border-gold-400/30 text-gold-400 shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-100 uppercase tracking-wide">
+                  Regla de Consolidación: Último Valor por Publicación
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">
+                  {showFullHistory ? 'Historial Completo' : 'Snapshot Vigente'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {showFullHistory
+                  ? `Mostrando todas las filas históricas de medición registradas (${displayedRecords.length} filas totales).`
+                  : `Calculando métricas sumando únicamente el valor más reciente de cada contenido único (${displayedRecords.length} publicaciones vigentes).`}
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle Button: Solo Último Valor Vigente vs Historial Completo */}
+          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 shrink-0 self-start md:self-auto">
+            <button
+              onClick={() => setShowFullHistory(false)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                !showFullHistory
+                  ? 'bg-gold-400 text-slate-950 shadow-md shadow-gold-500/20'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Sumar únicamente el valor más reciente por publicación"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Solo Último Valor Vigente ({aggregation.latestSnapshots.length})</span>
+            </button>
+            <button
+              onClick={() => setShowFullHistory(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                showFullHistory
+                  ? 'bg-gold-400 text-slate-950 shadow-md shadow-gold-500/20'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Ver todas las fechas de medición registradas"
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Ver Historial ({aggregation.allHistoryRecords.length})</span>
+            </button>
+          </div>
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-gold-400" />
             <h3 className="text-lg font-black text-slate-100">
-              Desglose Detallado de Publicaciones Indexadas
+              Desglose Detallado de Publicaciones {showFullHistory ? '(Historial Completo)' : '(Valores Vigentes)'}
             </h3>
           </div>
 
@@ -490,11 +565,11 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
                     : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'
                 }`}
               >
-                Todas ({aggregation.totalResults})
+                Todas ({sourceDataset.length})
               </button>
 
               {platformsList.map((p) => {
-                const count = aggregation.platformCounts[p] || 0;
+                const count = sourceDataset.filter(r => r.plataforma === p).length;
                 if (count === 0) return null;
 
                 return (
@@ -532,57 +607,85 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
                     <th className="py-3 px-3">Plataforma</th>
                     <th className="py-3 px-3">Tipo</th>
                     <th className="py-3 px-3">Campaña / Álbum</th>
+                    <th className="py-3 px-3">Fecha de Medición</th>
                     <th className="py-3 px-4 text-right">Reproducciones</th>
                     <th className="py-3 px-4 text-right">Alcance</th>
                     <th className="py-3 px-4 text-right">Interacciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 bg-slate-900/60">
-                  {displayedRecords.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-800/50 transition-colors text-slate-300">
-                      <td className="py-3 px-4 font-semibold text-slate-100">
-                        <div className="flex items-center gap-2">
-                          <span>{item.titulo}</span>
-                          {item.enlacePublicacion && (
-                            <a
-                              href={item.enlacePublicacion}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-slate-500 hover:text-gold-400 transition-colors shrink-0"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
+                  {displayedRecords.map((item) => {
+                    const itemKey = getContentItemKey(item);
+                    const historyCount = measurementCounts.get(itemKey) || 1;
+
+                    return (
+                      <tr key={item.id} className="hover:bg-slate-800/50 transition-colors text-slate-300">
+                        <td className="py-3 px-4 font-semibold text-slate-100">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span>{item.titulo}</span>
+                              {item.enlacePublicacion && (
+                                <a
+                                  href={item.enlacePublicacion}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-slate-500 hover:text-gold-400 transition-colors shrink-0"
+                                  title="Abrir enlace oficial"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
+                            {historyCount > 1 && !showFullHistory && (
+                              <span className="text-[10px] text-amber-400 font-normal flex items-center gap-1">
+                                <History className="w-2.5 h-2.5" />
+                                {historyCount} mediciones registradas en el historial
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[10px] font-bold text-slate-200">
+                            {platformIcons[item.plataforma]}
+                            <span>{item.plataforma}</span>
+                          </span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-medium text-slate-300">
+                            {item.tipoContenido}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-slate-400">
+                          {item.campania || 'Catálogo General'}
+                        </td>
+                        <td className="py-3 px-3">
+                          {!showFullHistory ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-[10px]">
+                              <ShieldCheck className="w-3 h-3" />
+                              Vigente al {item.fecha}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-mono text-[10px]">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              {item.fecha}
+                            </span>
                           )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[10px] font-bold text-slate-200">
-                          {platformIcons[item.plataforma]}
-                          <span>{item.plataforma}</span>
-                        </span>
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-medium text-slate-300">
-                          {item.tipoContenido}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-slate-400">
-                        {item.campania || 'Catálogo General'}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono font-bold text-emerald-400">
-                        {item.metricas.reproducciones.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono font-bold text-gold-300">
-                        {item.metricas.alcance.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono font-bold text-rose-300">
-                        {item.metricas.interacciones.toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-emerald-400">
+                          {item.metricas.reproducciones.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-gold-300">
+                          {item.metricas.alcance.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-rose-300">
+                          {item.metricas.interacciones.toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {displayedRecords.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-500 font-medium">
+                      <td colSpan={8} className="py-8 text-center text-slate-500 font-medium">
                         No hay registros directos para esta selección.
                       </td>
                     </tr>
@@ -592,9 +695,13 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
                 {displayedRecords.length > 0 && (
                   <tfoot className="bg-slate-950 border-t-2 border-gold-400/50">
                     <tr className="text-xs font-black text-slate-100 uppercase tracking-wider">
-                      <td colSpan={4} className="py-3.5 px-4 text-gold-400 flex items-center gap-2">
+                      <td colSpan={5} className="py-3.5 px-4 text-gold-400 flex items-center gap-2">
                         <Sparkles className="w-4 h-4" />
-                        <span>TOTALES CONSOLIDADOS ({displayedRecords.length} publicaciones)</span>
+                        <span>
+                          {showFullHistory
+                            ? `TOTAL HISTÓRICO ACUMULADO (${displayedRecords.length} filas)`
+                            : `TOTAL CONSOLIDADO VIGENTE (${displayedRecords.length} publicaciones únicas)`}
+                        </span>
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-black text-emerald-400 text-sm">
                         {displayedTotalReproducciones.toLocaleString()}
@@ -617,6 +724,8 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
             {displayedRecords.map((rec) => {
               const metrics = rec.metricas;
               const impact = metrics.reproducciones + metrics.alcance;
+              const itemKey = getContentItemKey(rec);
+              const historyCount = measurementCounts.get(itemKey) || 1;
 
               return (
                 <div
@@ -637,8 +746,8 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
                         </span>
                       </div>
 
-                      <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
+                      <span className="text-[11px] text-emerald-400 font-bold flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
+                        <ShieldCheck className="w-3 h-3" />
                         {rec.fecha}
                       </span>
                     </div>
@@ -651,6 +760,12 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
                       <p className="text-xs text-slate-400 line-clamp-2 mt-1 leading-relaxed">
                         {rec.descripcion}
                       </p>
+                      {historyCount > 1 && !showFullHistory && (
+                        <span className="text-[10px] text-amber-400 font-normal flex items-center gap-1 mt-1">
+                          <History className="w-2.5 h-2.5" />
+                          {historyCount} mediciones registradas
+                        </span>
+                      )}
                     </div>
 
                     {/* Metadata Chips: Campaign, Album, City */}

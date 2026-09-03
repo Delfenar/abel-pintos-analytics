@@ -6,13 +6,14 @@ import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Music, Radio, Bookmark, ListPlus, UserCheck, HeadphoneIcon, Disc, Flame } from 'lucide-react';
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
+import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
 
 export const SpotifyView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.spotify || platformDataMap.spotify;
 
   const spotifyContent = React.useMemo(() => {
-    const liveItems = liveSheetsRecords.filter(r => r.plataforma === 'Spotify');
+    const liveItems = getLatestSnapshotsByItem(liveSheetsRecords.filter(r => r.plataforma === 'Spotify'));
     if (liveItems.length > 0) {
       return liveItems.map(r => ({
         id: r.id,

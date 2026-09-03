@@ -6,13 +6,14 @@ import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Youtube, Play, Clock, UserPlus, Image, Award } from 'lucide-react';
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
+import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
 
 export const YouTubeView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.youtube || platformDataMap.youtube;
 
   const youtubeContent = React.useMemo(() => {
-    const liveItems = liveSheetsRecords.filter(r => r.plataforma === 'YouTube');
+    const liveItems = getLatestSnapshotsByItem(liveSheetsRecords.filter(r => r.plataforma === 'YouTube'));
     if (liveItems.length > 0) {
       return liveItems.map(r => ({
         id: r.id,

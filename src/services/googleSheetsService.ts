@@ -1,5 +1,5 @@
 import { GlobalOverviewData, PlatformData, CampaignId, DateRangeKey, CampaignFilter } from '../types/analytics';
-import { UniversalRecord, PlatformName, ContentTypeName } from './searchEngineService';
+import { UniversalRecord, PlatformName, ContentTypeName, getLatestSnapshotsByItem } from './searchEngineService';
 
 // Google Sheets Live Endpoints
 export const GOOGLE_SHEETS_READ_ENDPOINT = 'https://script.google.com/macros/s/AKfycby0GdXhYBuPSqaQl8onlAT2ltuUtwQ5poKX-X40vngR-8omF0aWzw8Rx1zF1Ya3NXI/exec';
@@ -66,7 +66,7 @@ export interface GoogleSheetsRowV2 {
   estadoKpi: string;
 }
 
-// Compute Channel Audience Metrics dynamically across all real records
+// Compute Channel Audience Metrics dynamically across all real records (Latest Snapshots)
 export const computeChannelAudienceMetrics = (
   records: UniversalRecord[]
 ): Record<PlatformName, ChannelAudienceMetric> => {
@@ -80,7 +80,9 @@ export const computeChannelAudienceMetrics = (
     Threads: { platform: 'Threads', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 420000, publicacionesCount: 0 },
   };
 
-  records.forEach(rec => {
+  const latestRecords = getLatestSnapshotsByItem(records);
+
+  latestRecords.forEach(rec => {
     const plat = rec.plataforma;
     if (audienceMap[plat]) {
       const reprod = Number(rec.metricas?.reproducciones || 0);
