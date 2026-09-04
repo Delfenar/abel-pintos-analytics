@@ -6,7 +6,7 @@ import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Music, Radio, Bookmark, ListPlus, UserCheck, HeadphoneIcon, Disc, Flame } from 'lucide-react';
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
-import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
+import { getLatestSnapshotPerContent, cleanNumber } from '../../services/searchEngineService';
 
 export const SpotifyView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords, channelAudienceMetrics } = useDashboard();
@@ -18,7 +18,7 @@ export const SpotifyView: React.FC = () => {
   const activeListeners = spotifyAudience?.oyentesActivos;
 
   const spotifyContent = React.useMemo(() => {
-    const liveItems = getLatestSnapshotsByItem(liveSheetsRecords.filter(r => r.plataforma === 'Spotify'));
+    const liveItems = getLatestSnapshotPerContent(liveSheetsRecords.filter(r => r.plataforma === 'Spotify'));
     if (liveItems.length > 0) {
       return liveItems.map(r => ({
         id: r.id,
@@ -29,11 +29,11 @@ export const SpotifyView: React.FC = () => {
         publishedAt: r.fecha,
         url: r.enlacePublicacion,
         metrics: {
-          viewsOrReach: r.metricas.reproducciones + r.metricas.alcance,
-          interactions: r.metricas.interacciones,
-          engagementRate: r.metricas.alcance > 0 ? Number(((r.metricas.interacciones / r.metricas.alcance) * 100).toFixed(2)) : 8.2,
-          sharesOrReposts: r.metricas.guardados,
-          saves: r.metricas.guardados
+          viewsOrReach: cleanNumber(r.metricas.reproducciones) + cleanNumber(r.metricas.alcance),
+          interactions: cleanNumber(r.metricas.interacciones),
+          engagementRate: cleanNumber(r.metricas.alcance) > 0 ? Number(((cleanNumber(r.metricas.interacciones) / cleanNumber(r.metricas.alcance)) * 100).toFixed(2)) : 8.2,
+          sharesOrReposts: cleanNumber(r.metricas.guardados),
+          saves: cleanNumber(r.metricas.guardados)
         }
       })).sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
     }

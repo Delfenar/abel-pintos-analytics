@@ -10,7 +10,7 @@ import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
 import { StatCard } from '../ui/StatCard';
 import { ContentTable } from '../ui/ContentTable';
 import { CAMPAIGNS } from '../../services/mockDataService';
-import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
+import { getLatestSnapshotPerContent, getLatestSnapshotsByItem, cleanNumber, PlatformName } from '../../services/searchEngineService';
 import { BlackPantherIcon } from '../ui/BlackPantherIcon';
 import { 
   ResponsiveContainer, 
@@ -27,7 +27,6 @@ import {
 } from 'recharts';
 import { Disc, Award, ShieldCheck, Layers, Sparkles, Music2, Music, Youtube, Instagram, Video, Facebook, Twitter, AtSign, Users, ArrowRightLeft, Flag, Settings } from 'lucide-react';
 import { SingleDayView } from './SingleDayView';
-import { PlatformName } from '../../services/searchEngineService';
 
 // Custom Panther Face Marker Dot for Recharts Graphs
 const PantherMarkerDot = (props: any) => {
@@ -65,7 +64,7 @@ export const OverviewView: React.FC = () => {
 
   const allTopContent = React.useMemo(() => {
     if (liveSheetsRecords && liveSheetsRecords.length > 0) {
-      const latestRecords = getLatestSnapshotsByItem(liveSheetsRecords);
+      const latestRecords = getLatestSnapshotPerContent(liveSheetsRecords);
       return latestRecords
         .filter(r => {
           if (activeCampaign === 'all') return true;
@@ -80,11 +79,11 @@ export const OverviewView: React.FC = () => {
           publishedAt: r.fecha,
           url: r.enlacePublicacion,
           metrics: {
-            viewsOrReach: r.metricas.reproducciones + r.metricas.alcance,
-            interactions: r.metricas.interacciones,
-            engagementRate: r.metricas.alcance > 0 ? Number(((r.metricas.interacciones / r.metricas.alcance) * 100).toFixed(2)) : 5.2,
-            sharesOrReposts: r.metricas.guardados,
-            saves: r.metricas.guardados
+            viewsOrReach: cleanNumber(r.metricas.reproducciones) + cleanNumber(r.metricas.alcance),
+            interactions: cleanNumber(r.metricas.interacciones),
+            engagementRate: cleanNumber(r.metricas.alcance) > 0 ? Number(((cleanNumber(r.metricas.interacciones) / cleanNumber(r.metricas.alcance)) * 100).toFixed(2)) : 5.2,
+            sharesOrReposts: cleanNumber(r.metricas.guardados),
+            saves: cleanNumber(r.metricas.guardados)
           }
         }))
         .sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
@@ -155,8 +154,8 @@ export const OverviewView: React.FC = () => {
       const platPosts = (consolidatedCampaignMetrics?.consolidatedRecords || []).filter(
         (r) => r.plataforma === cfg.platform
       );
-      const postStreams = platPosts.reduce((acc, r) => acc + (r.metricas?.reproducciones || 0), 0);
-      const postInteractions = platPosts.reduce((acc, r) => acc + (r.metricas?.interacciones || 0), 0);
+      const postStreams = platPosts.reduce((acc, r) => acc + cleanNumber(r.metricas?.reproducciones), 0);
+      const postInteractions = platPosts.reduce((acc, r) => acc + cleanNumber(r.metricas?.interacciones), 0);
 
       const streamsValue = postStreams > 0 ? postStreams : aud.visualizaciones;
       const interactionsValue = postInteractions > 0 ? postInteractions : aud.interacciones;

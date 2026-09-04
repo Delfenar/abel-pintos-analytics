@@ -6,14 +6,14 @@ import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { Facebook, DollarSign, MousePointer, Users, ThumbsUp } from 'lucide-react';
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
-import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
+import { getLatestSnapshotPerContent, cleanNumber } from '../../services/searchEngineService';
 
 export const FacebookView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.facebook || platformDataMap.facebook;
 
   const facebookContent = React.useMemo(() => {
-    const liveItems = getLatestSnapshotsByItem(liveSheetsRecords.filter(r => r.plataforma === 'Facebook'));
+    const liveItems = getLatestSnapshotPerContent(liveSheetsRecords.filter(r => r.plataforma === 'Facebook'));
     if (liveItems.length > 0) {
       return liveItems.map(r => ({
         id: r.id,
@@ -24,11 +24,11 @@ export const FacebookView: React.FC = () => {
         publishedAt: r.fecha,
         url: r.enlacePublicacion,
         metrics: {
-          viewsOrReach: r.metricas.reproducciones + r.metricas.alcance,
-          interactions: r.metricas.interacciones,
-          engagementRate: r.metricas.alcance > 0 ? Number(((r.metricas.interacciones / r.metricas.alcance) * 100).toFixed(2)) : 4.6,
-          sharesOrReposts: r.metricas.guardados,
-          saves: r.metricas.guardados
+          viewsOrReach: cleanNumber(r.metricas.reproducciones) + cleanNumber(r.metricas.alcance),
+          interactions: cleanNumber(r.metricas.interacciones),
+          engagementRate: cleanNumber(r.metricas.alcance) > 0 ? Number(((cleanNumber(r.metricas.interacciones) / cleanNumber(r.metricas.alcance)) * 100).toFixed(2)) : 4.6,
+          sharesOrReposts: cleanNumber(r.metricas.guardados),
+          saves: cleanNumber(r.metricas.guardados)
         }
       })).sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
     }

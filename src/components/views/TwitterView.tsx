@@ -7,14 +7,14 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import { BlackPantherIcon } from '../ui/BlackPantherIcon';
 import { Twitter, Repeat, MessageSquare, Heart, ExternalLink } from 'lucide-react';
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
-import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
+import { getLatestSnapshotPerContent, cleanNumber } from '../../services/searchEngineService';
 
 export const TwitterView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.twitter || platformDataMap.twitter;
 
   const twitterContent = React.useMemo(() => {
-    const liveItems = getLatestSnapshotsByItem(liveSheetsRecords.filter(r => r.plataforma === 'X'));
+    const liveItems = getLatestSnapshotPerContent(liveSheetsRecords.filter(r => r.plataforma === 'X'));
     if (liveItems.length > 0) {
       return liveItems.map(r => ({
         id: r.id,
@@ -25,11 +25,11 @@ export const TwitterView: React.FC = () => {
         publishedAt: r.fecha,
         url: r.enlacePublicacion,
         metrics: {
-          viewsOrReach: r.metricas.reproducciones + r.metricas.alcance,
-          interactions: r.metricas.interacciones,
-          engagementRate: r.metricas.alcance > 0 ? Number(((r.metricas.interacciones / r.metricas.alcance) * 100).toFixed(2)) : 3.9,
-          sharesOrReposts: r.metricas.guardados,
-          saves: r.metricas.guardados
+          viewsOrReach: cleanNumber(r.metricas.reproducciones) + cleanNumber(r.metricas.alcance),
+          interactions: cleanNumber(r.metricas.interacciones),
+          engagementRate: cleanNumber(r.metricas.alcance) > 0 ? Number(((cleanNumber(r.metricas.interacciones) / cleanNumber(r.metricas.alcance)) * 100).toFixed(2)) : 3.9,
+          sharesOrReposts: cleanNumber(r.metricas.guardados),
+          saves: cleanNumber(r.metricas.guardados)
         }
       })).sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
     }

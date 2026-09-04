@@ -5,7 +5,9 @@ import {
   UniversalRecord, 
   PlatformName,
   normalizeContentId,
-  getContentItemKey
+  getContentItemKey,
+  cleanNumber,
+  getLatestSnapshotPerContent
 } from '../../services/searchEngineService';
 import { 
   Search, 
@@ -94,11 +96,23 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
     return sourceDataset.filter(r => r.plataforma === activeTab);
   }, [sourceDataset, activeTab]);
 
-  // 100% Dynamic Calculations for displayed results
-  const displayedTotalReproducciones = displayedRecords.reduce((acc, item) => acc + Number(item.metricas?.reproducciones || 0), 0);
-  const displayedTotalAlcance = displayedRecords.reduce((acc, item) => acc + Number(item.metricas?.alcance || 0), 0);
+  // 100% Dynamic Calculations for displayed results (Guaranteed deduplication via getLatestSnapshotPerContent & cleanNumber)
+  const displayedTotalReproducciones = React.useMemo(() => {
+    const target = showFullHistory ? displayedRecords : getLatestSnapshotPerContent(displayedRecords);
+    return target.reduce((acc, item) => acc + cleanNumber(item.metricas?.reproducciones), 0);
+  }, [displayedRecords, showFullHistory]);
+
+  const displayedTotalAlcance = React.useMemo(() => {
+    const target = showFullHistory ? displayedRecords : getLatestSnapshotPerContent(displayedRecords);
+    return target.reduce((acc, item) => acc + cleanNumber(item.metricas?.alcance), 0);
+  }, [displayedRecords, showFullHistory]);
+
   const displayedTotalImpactoCombinado = displayedTotalReproducciones + displayedTotalAlcance;
-  const displayedTotalInteractions = displayedRecords.reduce((acc, item) => acc + Number(item.metricas?.interacciones || 0), 0);
+
+  const displayedTotalInteractions = React.useMemo(() => {
+    const target = showFullHistory ? displayedRecords : getLatestSnapshotPerContent(displayedRecords);
+    return target.reduce((acc, item) => acc + cleanNumber(item.metricas?.interacciones), 0);
+  }, [displayedRecords, showFullHistory]);
 
   const dual = aggregation.dualMetrics;
 

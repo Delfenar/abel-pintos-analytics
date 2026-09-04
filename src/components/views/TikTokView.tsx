@@ -6,14 +6,14 @@ import { ActiveFilterBanner } from '../ui/ActiveFilterBanner';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from 'recharts';
 import { Video, Play, Share2, Heart, Users, Clock } from 'lucide-react';
 import { ChannelAudienceCards } from '../ui/ChannelAudienceCards';
-import { getLatestSnapshotsByItem } from '../../services/searchEngineService';
+import { getLatestSnapshotPerContent, cleanNumber } from '../../services/searchEngineService';
 
 export const TikTokView: React.FC = () => {
   const { filteredPlatformDataMap, platformDataMap, comparisonMode, searchQuery, setSearchQuery, liveSheetsRecords } = useDashboard();
   const data = filteredPlatformDataMap.tiktok || platformDataMap.tiktok;
 
   const tiktokContent = React.useMemo(() => {
-    const liveItems = getLatestSnapshotsByItem(liveSheetsRecords.filter(r => r.plataforma === 'TikTok'));
+    const liveItems = getLatestSnapshotPerContent(liveSheetsRecords.filter(r => r.plataforma === 'TikTok'));
     if (liveItems.length > 0) {
       return liveItems.map(r => ({
         id: r.id,
@@ -24,11 +24,11 @@ export const TikTokView: React.FC = () => {
         publishedAt: r.fecha,
         url: r.enlacePublicacion,
         metrics: {
-          viewsOrReach: r.metricas.reproducciones + r.metricas.alcance,
-          interactions: r.metricas.interacciones,
-          engagementRate: r.metricas.alcance > 0 ? Number(((r.metricas.interacciones / r.metricas.alcance) * 100).toFixed(2)) : 7.5,
-          sharesOrReposts: r.metricas.guardados,
-          saves: r.metricas.guardados
+          viewsOrReach: cleanNumber(r.metricas.reproducciones) + cleanNumber(r.metricas.alcance),
+          interactions: cleanNumber(r.metricas.interacciones),
+          engagementRate: cleanNumber(r.metricas.alcance) > 0 ? Number(((cleanNumber(r.metricas.interacciones) / cleanNumber(r.metricas.alcance)) * 100).toFixed(2)) : 7.5,
+          sharesOrReposts: cleanNumber(r.metricas.guardados),
+          saves: cleanNumber(r.metricas.guardados)
         }
       })).sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
     }

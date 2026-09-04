@@ -1,5 +1,5 @@
 import { GlobalOverviewData, PlatformData, CampaignId, DateRangeKey, CampaignFilter } from '../types/analytics';
-import { UniversalRecord, PlatformName, ContentTypeName, getLatestSnapshotsByItem } from './searchEngineService';
+import { UniversalRecord, PlatformName, ContentTypeName, getLatestSnapshotPerContent, cleanNumber } from './searchEngineService';
 
 // Google Sheets Live Endpoints
 export const GOOGLE_SHEETS_READ_ENDPOINT = 'https://script.google.com/macros/s/AKfycby0GdXhYBuPSqaQl8onlAT2ltuUtwQ5poKX-X40vngR-8omF0aWzw8Rx1zF1Ya3NXI/exec';
@@ -151,7 +151,7 @@ export const transformSheetsRowToAudienceRecord = (
     row.oyentes_mensuales;
 
   const oyentesMensuales = rawMonthlyListeners !== undefined && rawMonthlyListeners !== null && rawMonthlyListeners !== ''
-    ? Number(rawMonthlyListeners)
+    ? cleanNumber(rawMonthlyListeners)
     : (plataforma === 'Spotify' ? 3700000 : undefined);
 
   // 2. Métrica secundaria: 'Spotify_Oyentes' (Oyentes Activos), NUNCA sumada a Oyentes Mensuales
@@ -161,17 +161,17 @@ export const transformSheetsRowToAudienceRecord = (
     row.Oyentes ?? 
     row.oyentes;
   const oyentesActivos = rawActiveListeners !== undefined && rawActiveListeners !== null && rawActiveListeners !== ''
-    ? Number(rawActiveListeners)
+    ? cleanNumber(rawActiveListeners)
     : undefined;
 
-  const seguidores = Number(
+  const seguidores = cleanNumber(
     row.Spotify_Seguidores ?? row.Seguidores ?? row.seguidores ?? row.Total_Seguidores ?? row.total_seguidores ?? row.Suscriptores ?? row.suscriptores ?? (plataforma === 'Spotify' ? 3840000 : 0)
-  ) || 0;
-  const suscriptores = Number(row.Suscriptores ?? row.suscriptores ?? 0) || undefined;
-  const visualizaciones = Number(row.Visualizaciones ?? row.visualizaciones ?? 0) || 0;
-  const interacciones = Number(row.Interacciones ?? row.interacciones ?? 0) || 0;
-  const contenidosCompartidos = Number(row.Contenidos_Compartidos ?? row.contenidos_compartidos ?? 0) || 0;
-  const nuevosSeguidores = Number(row.Nuevos_Seguidores ?? row.nuevos_seguidores ?? 0) || 0;
+  );
+  const suscriptores = (row.Suscriptores !== undefined || row.suscriptores !== undefined) ? cleanNumber(row.Suscriptores ?? row.suscriptores) : undefined;
+  const visualizaciones = cleanNumber(row.Visualizaciones ?? row.visualizaciones);
+  const interacciones = cleanNumber(row.Interacciones ?? row.interacciones);
+  const contenidosCompartidos = cleanNumber(row.Contenidos_Compartidos ?? row.contenidos_compartidos);
+  const nuevosSeguidores = cleanNumber(row.Nuevos_Seguidores ?? row.nuevos_seguidores);
 
   return {
     id: `aud-${plataforma.toLowerCase()}-${index + 1}-${fechaActualizacion}`,
@@ -289,7 +289,7 @@ export const computeChannelAudienceMetrics = (
 ): Record<PlatformName, ChannelAudienceMetric> => {
   if (audienceRecords && audienceRecords.length > 0) {
     const latestAudience = getLatestAudienceSnapshots(audienceRecords);
-    const latestPosts = getLatestSnapshotsByItem(records);
+    const latestPosts = getLatestSnapshotPerContent(records);
     (Object.keys(latestAudience) as PlatformName[]).forEach(plat => {
       latestAudience[plat].publicacionesCount = latestPosts.filter(r => r.plataforma === plat).length;
     });
@@ -306,15 +306,15 @@ export const computeChannelAudienceMetrics = (
     Threads: { platform: 'Threads', visualizaciones: 0, interacciones: 0, contenidosCompartidos: 0, nuevosSeguidores: 0, totalSeguidores: 420000, publicacionesCount: 0, fechaActualizacion: '2026-08-31' },
   };
 
-  const latestRecords = getLatestSnapshotsByItem(records);
+  const latestRecords = getLatestSnapshotPerContent(records);
 
   latestRecords.forEach(rec => {
     const plat = rec.plataforma;
     if (audienceMap[plat]) {
-      const reprod = Number(rec.metricas?.reproducciones || 0);
-      const inter = Number(rec.metricas?.interacciones || 0);
-      const shares = Number(rec.metricas?.guardados || Math.round(inter * 0.25));
-      const newFollowers = Math.round(Number(rec.metricas?.alcance || 0) * 0.015) || 120;
+      const reprod = cleanNumber(rec.metricas?.reproducciones);
+      const inter = cleanNumber(rec.metricas?.interacciones);
+      const shares = cleanNumber(rec.metricas?.guardados || Math.round(inter * 0.25));
+      const newFollowers = Math.round(cleanNumber(rec.metricas?.alcance) * 0.015) || 120;
 
       audienceMap[plat].visualizaciones += reprod;
       audienceMap[plat].interacciones += inter;
@@ -368,9 +368,9 @@ export const transformSheetsRowToUniversalRecord = (row: RawGoogleSheetsRow, ind
   const plataforma = normalizePlatformName(row.Plataforma || row.plataforma);
   const tipoContenido = normalizeContentType(row.Tipo || row.tipo);
 
-  const reprod = Number(row.Reproducciones ?? row.reproducciones ?? row.Streams ?? row.streams ?? row.Views ?? row.views ?? 0) || 0;
-  const alc = Number(row.Alcance ?? row.alcance ?? row.Reach ?? row.reach ?? 0) || 0;
-  const inter = Number(row.Interacciones ?? row.interacciones ?? 0) || 0;
+  const reprod = cleanNumber(row.Reproducciones ?? row.reproducciones ?? row.Streams ?? row.streams ?? row.Views ?? row.views);
+  const alc = cleanNumber(row.Alcance ?? row.alcance ?? row.Reach ?? row.reach);
+  const inter = cleanNumber(row.Interacciones ?? row.interacciones);
 
   const enlace = row.Enlace || row.enlace || row.Link || row.link;
 

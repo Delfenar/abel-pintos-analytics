@@ -2,7 +2,7 @@ import React from 'react';
 import { useDashboard } from '../../context/DashboardContext';
 import { Printer, X, Download, FileText, CheckCircle2, Music2, MapPin, Eye, Heart, Flame, Layers, Scale, Percent, BarChart3, ArrowRightLeft, Sparkles, Award } from 'lucide-react';
 import { BlackPantherIcon } from './BlackPantherIcon';
-import { PlatformName } from '../../services/searchEngineService';
+import { PlatformName, cleanNumber, getLatestSnapshotPerContent } from '../../services/searchEngineService';
 
 interface PrintReportModalProps {
   isOpen: boolean;
@@ -18,14 +18,14 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({ isOpen, onCl
   const now = new Date(2026, 7, 31, 17, 35);
   const formattedDate = `31 de Agosto de 2026, ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} hs`;
 
-  const results = universalSearchAggregation.allResults;
+  const results = getLatestSnapshotPerContent(universalSearchAggregation.allResults);
   const dual = universalSearchAggregation.dualMetrics;
 
-  // 100% Dynamic Calculations for the filtered results
-  const totalReproducciones = results.reduce((acc, item) => acc + Number(item.metricas?.reproducciones || 0), 0);
-  const totalAlcance = results.reduce((acc, item) => acc + Number(item.metricas?.alcance || 0), 0);
+  // 100% Dynamic Calculations for the filtered results strictly using getLatestSnapshotPerContent and cleanNumber
+  const totalReproducciones = results.reduce((acc, item) => acc + cleanNumber(item.metricas?.reproducciones), 0);
+  const totalAlcance = results.reduce((acc, item) => acc + cleanNumber(item.metricas?.alcance), 0);
   const totalImpactoCombinado = totalReproducciones + totalAlcance;
-  const totalInteractions = results.reduce((acc, item) => acc + Number(item.metricas?.interacciones || 0), 0);
+  const totalInteractions = results.reduce((acc, item) => acc + cleanNumber(item.metricas?.interacciones), 0);
   const topPlatform = universalSearchAggregation.topPlatform;
 
   const platformsList: PlatformName[] = ['Spotify', 'YouTube', 'Instagram', 'TikTok', 'Facebook', 'X', 'Threads'];

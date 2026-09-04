@@ -21,7 +21,7 @@ import {
   AtSign 
 } from 'lucide-react';
 import { BlackPantherIcon } from './BlackPantherIcon';
-import { getLatestSnapshotsByItem, PlatformName } from '../../services/searchEngineService';
+import { getLatestSnapshotPerContent, cleanNumber, PlatformName } from '../../services/searchEngineService';
 
 export const LiveDailyPulse: React.FC = () => {
   const { dateRange, liveSheetsRecords, consolidatedCampaignMetrics } = useDashboard();
@@ -66,20 +66,20 @@ export const LiveDailyPulse: React.FC = () => {
   // 1. Dynamic Top Performer Selection from real Google Sheets 'Metricas'
   const topPerformer = React.useMemo(() => {
     if (!liveSheetsRecords || liveSheetsRecords.length === 0) return null;
-    const latestSnapshots = getLatestSnapshotsByItem(liveSheetsRecords);
+    const latestSnapshots = getLatestSnapshotPerContent(liveSheetsRecords);
     if (latestSnapshots.length === 0) return null;
 
     return [...latestSnapshots].sort((a, b) => {
-      const reprodA = Number(a.metricas?.reproducciones || 0);
-      const alcanceA = Number(a.metricas?.alcance || 0);
+      const reprodA = cleanNumber(a.metricas?.reproducciones);
+      const alcanceA = cleanNumber(a.metricas?.alcance);
       const impactA = reprodA + alcanceA;
 
-      const reprodB = Number(b.metricas?.reproducciones || 0);
-      const alcanceB = Number(b.metricas?.alcance || 0);
+      const reprodB = cleanNumber(b.metricas?.reproducciones);
+      const alcanceB = cleanNumber(b.metricas?.alcance);
       const impactB = reprodB + alcanceB;
 
       if (impactB !== impactA) return impactB - impactA;
-      return Number(b.metricas?.interacciones || 0) - Number(a.metricas?.interacciones || 0);
+      return cleanNumber(b.metricas?.interacciones) - cleanNumber(a.metricas?.interacciones);
     })[0];
   }, [liveSheetsRecords]);
 

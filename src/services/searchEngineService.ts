@@ -469,6 +469,17 @@ const GENERIC_EXCLUDED_TERMS = new Set([
 ]);
 
 /**
+ * Utility: Sanitizes formatted strings, nulls, undefined, and values with commas into clean numbers.
+ */
+export const cleanNumber = (val: any): number => {
+  if (val === null || val === undefined || val === '') return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  const str = String(val).replace(/,/g, '').trim();
+  const parsed = Number(str);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+/**
  * 1. Normalización Estricta de Identificadores (Sanitización):
  * Agrupa mediciones del mismo contenido eliminando URL query parameters y trailing slashes.
  * 
@@ -512,6 +523,61 @@ export const normalizeContentId = (
 // Backwards-compatible alias for getContentItemKey
 export const getContentItemKey = normalizeContentId;
 
+/**
+ * 2. Implementación Obligatoria: getLatestSnapshotPerContent
+ * Consolidación de "Último Valor por Publicación" (Latest Snapshot Aggregation).
+ * Procesa un array de filas (o UniversalRecord) agrupando por identificador único
+ * y conservando EXCLUSIVAMENTE la fila con la fecha más reciente (el último snapshot registrado).
+ * 
+ * Prohibición estricta: NUNCA sumar filas de distintas fechas que correspondan al mismo contenido.
+ */
+export const getLatestSnapshotPerContent = <T extends any = any>(rows: T[]): T[] => {
+  if (!rows || !Array.isArray(rows) || rows.length === 0) return [];
+  const contentMap = new Map<string, T>();
+
+  rows.forEach((row: any) => {
+    if (!row) return;
+    // Clave única normalizada (limpiando query params y espacios)
+    const rawId = normalizeContentId(row);
+    if (!rawId) return;
+
+    const existing: any = contentMap.get(rawId);
+    const rowDate = row.Fecha || row.fecha || '';
+    const existingDate = existing ? (existing.Fecha || existing.fecha || '') : '';
+
+    if (!existing) {
+      contentMap.set(rawId, row);
+    } else {
+      const timeRow = new Date(rowDate).getTime();
+      const timeExisting = new Date(existingDate).getTime();
+
+      if (!isNaN(timeRow) && !isNaN(timeExisting)) {
+        if (timeRow > timeExisting) {
+          contentMap.set(rawId, row);
+        } else if (timeRow === timeExisting) {
+          // Si coinciden en fecha, tomar el registro con mayor volumen registrado
+          const rowRep = cleanNumber(row.Reproducciones ?? row.reproducciones ?? row.metricas?.reproducciones);
+          const rowAlc = cleanNumber(row.Alcance ?? row.alcance ?? row.metricas?.alcance);
+          const existRep = cleanNumber(existing.Reproducciones ?? existing.reproducciones ?? existing.metricas?.reproducciones);
+          const existAlc = cleanNumber(existing.Alcance ?? existing.alcance ?? existing.metricas?.alcance);
+          if ((rowRep + rowAlc) > (existRep + existAlc)) {
+            contentMap.set(rawId, row);
+          }
+        }
+      } else {
+        if (String(rowDate).localeCompare(String(existingDate)) > 0) {
+          contentMap.set(rawId, row);
+        }
+      }
+    }
+  });
+
+  return Array.from(contentMap.values());
+};
+
+// Aliases for backward compatibility
+export const getLatestSnapshotsByItem = getLatestSnapshotPerContent;
+
 export interface ConsolidatedMetrics {
   totalViews: number;
   totalReach: number;
@@ -523,15 +589,14 @@ export interface ConsolidatedMetrics {
 }
 
 /**
- * 2. Pipeline de Agregación Inmutable (getConsolidatedMetrics):
+ * 3. Pipeline de Agregación Inmutable (getConsolidatedMetrics):
  * Calcula los totales globales o de un tema/campaña (ej. "Ibuprofeno"):
  * - Paso 1: Filtra las filas donde 'Tema_Campania' coincida con la campaña solicitada.
- * - Paso 2: Agrupa por 'normalizeContentId'.
- * - Paso 3: Dentro de cada grupo, ordena por 'Fecha' (timestamp) y toma ÚNICAMENTE el registro con la fecha más reciente.
+ * - Paso 2 & 3: Aplica getLatestSnapshotPerContent para conservar únicamente el último valor por contenido.
  * - Paso 4: Reduce la lista final de registros únicos para calcular:
- *   * totalViews = sum(Reproducciones)
- *   * totalReach = sum(Alcance)
- *   * totalInteractions = sum(Interacciones)
+ *   * totalViews = sum(cleanNumber(Reproducciones))
+ *   * totalReach = sum(cleanNumber(Alcance))
+ *   * totalInteractions = sum(cleanNumber(Interacciones))
  *   * totalCombinedImpact = totalViews + totalReach
  */
 export const getConsolidatedMetrics = (
@@ -550,7 +615,7 @@ export const getConsolidatedMetrics = (
     };
   }
 
-  // Paso 1: Filtra las filas donde Tema_Campania coincida exactamente con la campaña solicitada
+  // Paso 1: Filtra las filas donde Tema_Campania coincida con la campaña solicitada
   const filteredRows = records.filter(r => {
     if (!filtroCampania || filtroCampania === 'all' || filtroCampania.trim() === '') {
       return true;
@@ -563,41 +628,13 @@ export const getConsolidatedMetrics = (
     return camp === query || cleanCampId === cleanQueryId || isStrictMatch(r.campania, query) || isStrictMatch(r.titulo, query);
   });
 
-  // Paso 2: Agrupa por normalizeContentId
-  const groups = new Map<string, UniversalRecord[]>();
-  filteredRows.forEach(row => {
-    const contentId = normalizeContentId(row);
-    if (!groups.has(contentId)) {
-      groups.set(contentId, []);
-    }
-    groups.get(contentId)!.push(row);
-  });
+  // Pasos 2 & 3: Conserva EXCLUSIVAMENTE el último snapshot vigente por publicación única
+  const consolidatedRecords = getLatestSnapshotPerContent(filteredRows);
 
-  // Paso 3: Dentro de cada grupo, ordena por Fecha (timestamp) y toma ÚNICAMENTE el registro con la fecha más reciente
-  const consolidatedRecords: UniversalRecord[] = [];
-  groups.forEach((groupRows) => {
-    // Inmutable sort descending by date timestamp
-    const sorted = [...groupRows].sort((a, b) => {
-      const timeA = new Date(a.fecha).getTime();
-      const timeB = new Date(b.fecha).getTime();
-      if (!isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
-        return timeB - timeA;
-      }
-      if (a.fecha !== b.fecha) {
-        return b.fecha.localeCompare(a.fecha);
-      }
-      return (b.metricas.reproducciones + b.metricas.alcance) - (a.metricas.reproducciones + a.metricas.alcance);
-    });
-
-    if (sorted[0]) {
-      consolidatedRecords.push(sorted[0]);
-    }
-  });
-
-  // Paso 4: Reduce la lista final de registros únicos para calcular métricas consolidadas
-  const totalViews = consolidatedRecords.reduce((sum, r) => sum + Number(r.metricas?.reproducciones || (r.metricas as any)?.streams || (r.metricas as any)?.views || 0), 0);
-  const totalReach = consolidatedRecords.reduce((sum, r) => sum + Number(r.metricas?.alcance || (r.metricas as any)?.reach || 0), 0);
-  const totalInteractions = consolidatedRecords.reduce((sum, r) => sum + Number(r.metricas?.interacciones || 0), 0);
+  // Paso 4: Reduce la lista final de registros únicos para calcular métricas consolidadas sin duplicación
+  const totalViews = consolidatedRecords.reduce((sum, r) => sum + cleanNumber(r.metricas?.reproducciones ?? (r.metricas as any)?.streams ?? (r.metricas as any)?.views), 0);
+  const totalReach = consolidatedRecords.reduce((sum, r) => sum + cleanNumber(r.metricas?.alcance ?? (r.metricas as any)?.reach), 0);
+  const totalInteractions = consolidatedRecords.reduce((sum, r) => sum + cleanNumber(r.metricas?.interacciones), 0);
   const totalCombinedImpact = totalViews + totalReach;
 
   return {
@@ -609,14 +646,6 @@ export const getConsolidatedMetrics = (
     consolidatedRecords,
     allHistoryRecords: filteredRows
   };
-};
-
-/**
- * Consolidates a list of records by keeping EXCLUSIVELY the latest snapshot (most recent date)
- * for each unique publication item using normalizeContentId.
- */
-export const getLatestSnapshotsByItem = (records: UniversalRecord[]): UniversalRecord[] => {
-  return getConsolidatedMetrics(records, 'all').consolidatedRecords;
 };
 
 // Exact Calculation helper for Impacto Total (Streams & Alcance) using Latest Snapshots
@@ -730,7 +759,7 @@ export const searchUniversalRecords = (
   });
 
   // Steps 2 & 3: Group by unique content item and select the single latest snapshot row
-  const latestSnapshots = getLatestSnapshotsByItem(matchedRecords);
+  const latestSnapshots = getLatestSnapshotPerContent(matchedRecords);
   const hasMultipleSnapshots = matchedRecords.length > latestSnapshots.length;
 
   // Group latest snapshots by platform
@@ -749,25 +778,25 @@ export const searchUniversalRecords = (
     platformCounts[rec.plataforma] = (platformCounts[rec.plataforma] || 0) + 1;
     groupedResults[rec.plataforma].push(rec);
 
-    const impact = Number(rec.metricas?.reproducciones || 0) + Number(rec.metricas?.alcance || 0);
+    const impact = cleanNumber(rec.metricas?.reproducciones) + cleanNumber(rec.metricas?.alcance);
     platformImpactTotals[rec.plataforma] += impact;
   });
 
   // Step 4: Final KPI summation strictly on latest snapshots
-  const totalReproducciones = latestSnapshots.reduce((acc, item) => acc + Number(item.metricas?.reproducciones || 0), 0);
-  const totalAlcance = latestSnapshots.reduce((acc, item) => acc + Number(item.metricas?.alcance || 0), 0);
+  const totalReproducciones = latestSnapshots.reduce((acc, item) => acc + cleanNumber(item.metricas?.reproducciones), 0);
+  const totalAlcance = latestSnapshots.reduce((acc, item) => acc + cleanNumber(item.metricas?.alcance), 0);
   const totalImpactoCombinado = totalReproducciones + totalAlcance;
   const totalImpacts = totalImpactoCombinado;
-  const totalInteractions = latestSnapshots.reduce((acc, item) => acc + Number(item.metricas?.interacciones || 0), 0);
-  const totalSaves = latestSnapshots.reduce((acc, r) => acc + Number(r.metricas?.guardados || 0), 0);
-  const totalClicks = latestSnapshots.reduce((acc, r) => acc + Number(r.metricas?.clics || 0), 0);
+  const totalInteractions = latestSnapshots.reduce((acc, item) => acc + cleanNumber(item.metricas?.interacciones), 0);
+  const totalSaves = latestSnapshots.reduce((acc, r) => acc + cleanNumber(r.metricas?.guardados), 0);
+  const totalClicks = latestSnapshots.reduce((acc, r) => acc + cleanNumber(r.metricas?.clics), 0);
 
   // Platform with highest volume of reproducciones / streams among latest snapshots
   const platformReproduccionesTotals: Record<PlatformName, number> = {
     Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
   };
   latestSnapshots.forEach(rec => {
-    platformReproduccionesTotals[rec.plataforma] += Number(rec.metricas?.reproducciones || 0);
+    platformReproduccionesTotals[rec.plataforma] += cleanNumber(rec.metricas?.reproducciones);
   });
   const sortedByReproducciones = (Object.entries(platformReproduccionesTotals) as [PlatformName, number][])
     .sort((a, b) => b[1] - a[1]);
@@ -778,7 +807,7 @@ export const searchUniversalRecords = (
     : (sortedPlatforms[0] && sortedPlatforms[0][1] > 0 ? sortedPlatforms[0][0] : 'Spotify');
 
   // Global Benchmark Totals across all master records (deduplicated to latest snapshots for fair benchmark)
-  const globalLatestSnapshots = getLatestSnapshotsByItem(records);
+  const globalLatestSnapshots = getLatestSnapshotPerContent(records);
   const globalPlatformImpactTotals: Record<PlatformName, number> = {
     Spotify: 0, YouTube: 0, Instagram: 0, TikTok: 0, Facebook: 0, X: 0, Threads: 0
   };
@@ -793,8 +822,8 @@ export const searchUniversalRecords = (
   let globalInteractions = 0;
 
   globalLatestSnapshots.forEach(rec => {
-    const impact = Number(rec.metricas?.reproducciones || 0) + Number(rec.metricas?.alcance || 0);
-    const interactions = Number(rec.metricas?.interacciones || 0);
+    const impact = cleanNumber(rec.metricas?.reproducciones) + cleanNumber(rec.metricas?.alcance);
+    const interactions = cleanNumber(rec.metricas?.interacciones);
 
     globalPlatformImpactTotals[rec.plataforma] += impact;
     globalPlatformInteractionTotals[rec.plataforma] += interactions;
@@ -821,7 +850,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.Spotify > 0 
         ? Number(((platformImpactTotals.Spotify / globalPlatformImpactTotals.Spotify) * 100).toFixed(1))
         : 0,
-      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Spotify').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Spotify').reduce((a, r) => a + cleanNumber(r.metricas?.interacciones), 0),
       globalInteractions: globalPlatformInteractionTotals.Spotify,
       filteredCount: platformCounts.Spotify,
       globalCount: globalPlatformCounts.Spotify
@@ -832,7 +861,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.YouTube > 0 
         ? Number(((platformImpactTotals.YouTube / globalPlatformImpactTotals.YouTube) * 100).toFixed(1))
         : 0,
-      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'YouTube').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'YouTube').reduce((a, r) => a + cleanNumber(r.metricas?.interacciones), 0),
       globalInteractions: globalPlatformInteractionTotals.YouTube,
       filteredCount: platformCounts.YouTube,
       globalCount: globalPlatformCounts.YouTube
@@ -843,7 +872,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.Instagram > 0 
         ? Number(((platformImpactTotals.Instagram / globalPlatformImpactTotals.Instagram) * 100).toFixed(1))
         : 0,
-      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Instagram').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Instagram').reduce((a, r) => a + cleanNumber(r.metricas?.interacciones), 0),
       globalInteractions: globalPlatformInteractionTotals.Instagram,
       filteredCount: platformCounts.Instagram,
       globalCount: globalPlatformCounts.Instagram
@@ -854,7 +883,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.TikTok > 0 
         ? Number(((platformImpactTotals.TikTok / globalPlatformImpactTotals.TikTok) * 100).toFixed(1))
         : 0,
-      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'TikTok').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'TikTok').reduce((a, r) => a + cleanNumber(r.metricas?.interacciones), 0),
       globalInteractions: globalPlatformInteractionTotals.TikTok,
       filteredCount: platformCounts.TikTok,
       globalCount: globalPlatformCounts.TikTok
@@ -865,7 +894,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.Facebook > 0 
         ? Number(((platformImpactTotals.Facebook / globalPlatformImpactTotals.Facebook) * 100).toFixed(1))
         : 0,
-      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Facebook').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Facebook').reduce((a, r) => a + cleanNumber(r.metricas?.interacciones), 0),
       globalInteractions: globalPlatformInteractionTotals.Facebook,
       filteredCount: platformCounts.Facebook,
       globalCount: globalPlatformCounts.Facebook
@@ -876,7 +905,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.X > 0 
         ? Number(((platformImpactTotals.X / globalPlatformImpactTotals.X) * 100).toFixed(1))
         : 0,
-      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'X').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'X').reduce((a, r) => a + cleanNumber(r.metricas?.interacciones), 0),
       globalInteractions: globalPlatformInteractionTotals.X,
       filteredCount: platformCounts.X,
       globalCount: globalPlatformCounts.X
@@ -887,7 +916,7 @@ export const searchUniversalRecords = (
       sharePercent: globalPlatformImpactTotals.Threads > 0 
         ? Number(((platformImpactTotals.Threads / globalPlatformImpactTotals.Threads) * 100).toFixed(1))
         : 0,
-      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Threads').reduce((a, r) => a + Number(r.metricas?.interacciones || 0), 0),
+      filteredInteractions: latestSnapshots.filter(r => r.plataforma === 'Threads').reduce((a, r) => a + cleanNumber(r.metricas?.interacciones), 0),
       globalInteractions: globalPlatformInteractionTotals.Threads,
       filteredCount: platformCounts.Threads,
       globalCount: globalPlatformCounts.Threads
