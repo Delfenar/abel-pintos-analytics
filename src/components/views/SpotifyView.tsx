@@ -29,9 +29,9 @@ export const SpotifyView: React.FC = () => {
         publishedAt: r.fecha,
         url: r.enlacePublicacion,
         metrics: {
-          viewsOrReach: cleanNumber(r.metricas.reproducciones) + cleanNumber(r.metricas.alcance),
+          viewsOrReach: cleanNumber(r.metricas.reproducciones),
           interactions: cleanNumber(r.metricas.interacciones),
-          engagementRate: cleanNumber(r.metricas.alcance) > 0 ? Number(((cleanNumber(r.metricas.interacciones) / cleanNumber(r.metricas.alcance)) * 100).toFixed(2)) : 8.2,
+          engagementRate: 8.2,
           sharesOrReposts: cleanNumber(r.metricas.guardados),
           saves: cleanNumber(r.metricas.guardados)
         }

@@ -70,12 +70,14 @@ export const LiveDailyPulse: React.FC = () => {
     if (latestSnapshots.length === 0) return null;
 
     return [...latestSnapshots].sort((a, b) => {
+      const isSpotifyA = a.plataforma.toLowerCase() === 'spotify';
       const reprodA = cleanNumber(a.metricas?.reproducciones);
-      const alcanceA = cleanNumber(a.metricas?.alcance);
+      const alcanceA = isSpotifyA ? 0 : cleanNumber(a.metricas?.alcance);
       const impactA = reprodA + alcanceA;
 
+      const isSpotifyB = b.plataforma.toLowerCase() === 'spotify';
       const reprodB = cleanNumber(b.metricas?.reproducciones);
-      const alcanceB = cleanNumber(b.metricas?.alcance);
+      const alcanceB = isSpotifyB ? 0 : cleanNumber(b.metricas?.alcance);
       const impactB = reprodB + alcanceB;
 
       if (impactB !== impactA) return impactB - impactA;
@@ -241,7 +243,9 @@ export const LiveDailyPulse: React.FC = () => {
                 Alcance Directo
               </span>
               <span className="font-mono font-black text-sky-300 text-sm">
-                {(topPerformer.metricas?.alcance || 0).toLocaleString()}
+                {topPerformer.plataforma.toLowerCase() === 'spotify' || !topPerformer.metricas?.alcance
+                  ? '—'
+                  : (topPerformer.metricas?.alcance || 0).toLocaleString()}
               </span>
             </div>
 
@@ -263,7 +267,7 @@ export const LiveDailyPulse: React.FC = () => {
                 Impacto Total
               </span>
               <span className="font-mono font-black text-emerald-400 text-sm">
-                {((topPerformer.metricas?.reproducciones || 0) + (topPerformer.metricas?.alcance || 0)).toLocaleString()}
+                {((topPerformer.metricas?.reproducciones || 0) + (topPerformer.plataforma.toLowerCase() === 'spotify' ? 0 : (topPerformer.metricas?.alcance || 0))).toLocaleString()}
               </span>
             </div>
           </div>

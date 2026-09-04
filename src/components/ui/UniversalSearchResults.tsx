@@ -104,7 +104,10 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
 
   const displayedTotalAlcance = React.useMemo(() => {
     const target = showFullHistory ? displayedRecords : getLatestSnapshotPerContent(displayedRecords);
-    return target.reduce((acc, item) => acc + cleanNumber(item.metricas?.alcance), 0);
+    return target.reduce((acc, item) => {
+      if (item.plataforma.toLowerCase() === 'spotify') return acc;
+      return acc + cleanNumber(item.metricas?.alcance);
+    }, 0);
   }, [displayedRecords, showFullHistory]);
 
   const displayedTotalImpactoCombinado = displayedTotalReproducciones + displayedTotalAlcance;
@@ -690,7 +693,7 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
                           {item.metricas.reproducciones.toLocaleString()}
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-gold-300">
-                          {item.metricas.alcance.toLocaleString()}
+                          {item.plataforma.toLowerCase() === 'spotify' || !item.metricas.alcance ? '—' : item.metricas.alcance.toLocaleString()}
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-rose-300">
                           {item.metricas.interacciones.toLocaleString()}
@@ -737,8 +740,9 @@ export const UniversalSearchResults: React.FC<UniversalSearchResultsProps> = ({ 
           /* Cards View */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {displayedRecords.map((rec) => {
+              const isSpotify = rec.plataforma.toLowerCase() === 'spotify';
               const metrics = rec.metricas;
-              const impact = metrics.reproducciones + metrics.alcance;
+              const impact = metrics.reproducciones + (isSpotify ? 0 : metrics.alcance);
               const itemKey = normalizeContentId(rec);
               const historyCount = measurementCounts.get(itemKey) || 1;
 

@@ -82,7 +82,7 @@ export const MASTER_INDEXABLE_RECORDS: UniversalRecord[] = [
     album: '11',
     ciudad: 'Buenos Aires',
     tags: ['Oncemil', 'Álbum 11', 'Top Track', 'Streaming'],
-    metricas: { reproducciones: 6200000, alcance: 4420000, impresiones: 8900000, interacciones: 720000, guardados: 540000, clics: 120000 },
+    metricas: { reproducciones: 6200000, alcance: 0, impresiones: 0, interacciones: 720000, guardados: 540000, clics: 120000 },
     enlacePublicacion: 'https://open.spotify.com/artist/AbelPintos'
   },
   {
@@ -142,7 +142,7 @@ export const MASTER_INDEXABLE_RECORDS: UniversalRecord[] = [
     album: 'Único',
     ciudad: 'Rosario',
     tags: ['Motivos', 'Único', 'Clásico', 'En Vivo'],
-    metricas: { reproducciones: 4800000, alcance: 3850000, impresiones: 6700000, interacciones: 580000, guardados: 410000, clics: 95000 },
+    metricas: { reproducciones: 4800000, alcance: 0, impresiones: 0, interacciones: 580000, guardados: 410000, clics: 95000 },
     enlacePublicacion: 'https://open.spotify.com/artist/AbelPintos'
   },
   {
@@ -202,7 +202,7 @@ export const MASTER_INDEXABLE_RECORDS: UniversalRecord[] = [
     album: 'Nuevas Sesiones 2026',
     ciudad: 'Buenos Aires',
     tags: ['Ibuprofeno', 'Single', 'Estreno', 'Lanzamiento'],
-    metricas: { reproducciones: 1950000, alcance: 1650000, impresiones: 2800000, interacciones: 275000, guardados: 190000, clics: 89000 },
+    metricas: { reproducciones: 1950000, alcance: 0, impresiones: 0, interacciones: 275000, guardados: 190000, clics: 89000 },
     enlacePublicacion: 'https://open.spotify.com/artist/AbelPintos'
   },
   {
@@ -304,7 +304,7 @@ export const MASTER_INDEXABLE_RECORDS: UniversalRecord[] = [
     album: 'Sueño Dorado',
     ciudad: 'Buenos Aires',
     tags: ['Sin Principio Ni Final', 'Sueño Dorado', 'Balada', 'Romántico'],
-    metricas: { reproducciones: 4100000, alcance: 3400000, impresiones: 5800000, interacciones: 490000, guardados: 380000, clics: 82000 },
+    metricas: { reproducciones: 4100000, alcance: 0, impresiones: 0, interacciones: 490000, guardados: 380000, clics: 82000 },
     enlacePublicacion: 'https://open.spotify.com/artist/AbelPintos'
   },
   {
@@ -336,7 +336,7 @@ export const MASTER_INDEXABLE_RECORDS: UniversalRecord[] = [
     album: 'El Amor en Mi Vida',
     ciudad: 'Bahía Blanca',
     tags: ['Piedra Libre', 'El Amor en Mi Vida', 'Familia', 'Acústico'],
-    metricas: { reproducciones: 3400000, alcance: 2900000, impresiones: 4700000, interacciones: 390000, guardados: 290000, clics: 64000 },
+    metricas: { reproducciones: 3400000, alcance: 0, impresiones: 0, interacciones: 390000, guardados: 290000, clics: 64000 },
     enlacePublicacion: 'https://open.spotify.com/artist/AbelPintos'
   },
 
@@ -354,7 +354,7 @@ export const MASTER_INDEXABLE_RECORDS: UniversalRecord[] = [
     album: 'Alta en el Cielo',
     ciudad: 'Buenos Aires',
     tags: ['Alta en el Cielo', 'Teatro Colón', 'Himnos', 'Cultura'],
-    metricas: { reproducciones: 2900000, alcance: 2400000, impresiones: 3900000, interacciones: 340000, guardados: 240000, clics: 55000 },
+    metricas: { reproducciones: 2900000, alcance: 0, impresiones: 0, interacciones: 340000, guardados: 240000, clics: 55000 },
     enlacePublicacion: 'https://open.spotify.com/artist/AbelPintos'
   },
 
@@ -633,7 +633,11 @@ export const getConsolidatedMetrics = (
 
   // Paso 4: Reduce la lista final de registros únicos para calcular métricas consolidadas sin duplicación
   const totalViews = consolidatedRecords.reduce((sum, r) => sum + cleanNumber(r.metricas?.reproducciones ?? (r.metricas as any)?.streams ?? (r.metricas as any)?.views), 0);
-  const totalReach = consolidatedRecords.reduce((sum, r) => sum + cleanNumber(r.metricas?.alcance ?? (r.metricas as any)?.reach), 0);
+  const totalReach = consolidatedRecords.reduce((sum, r) => {
+    const isSpotify = (r.plataforma || '').toLowerCase() === 'spotify';
+    if (isSpotify) return sum;
+    return sum + cleanNumber(r.metricas?.alcance ?? (r.metricas as any)?.reach);
+  }, 0);
   const totalInteractions = consolidatedRecords.reduce((sum, r) => sum + cleanNumber(r.metricas?.interacciones), 0);
   const totalCombinedImpact = totalViews + totalReach;
 
@@ -778,13 +782,19 @@ export const searchUniversalRecords = (
     platformCounts[rec.plataforma] = (platformCounts[rec.plataforma] || 0) + 1;
     groupedResults[rec.plataforma].push(rec);
 
-    const impact = cleanNumber(rec.metricas?.reproducciones) + cleanNumber(rec.metricas?.alcance);
+    const isSpotify = rec.plataforma.toLowerCase() === 'spotify';
+    const reach = isSpotify ? 0 : cleanNumber(rec.metricas?.alcance);
+    const reprod = cleanNumber(rec.metricas?.reproducciones);
+    const impact = reprod + reach;
     platformImpactTotals[rec.plataforma] += impact;
   });
 
-  // Step 4: Final KPI summation strictly on latest snapshots
+  // Step 4: Final KPI summation strictly on latest snapshots (Spotify reach = 0)
   const totalReproducciones = latestSnapshots.reduce((acc, item) => acc + cleanNumber(item.metricas?.reproducciones), 0);
-  const totalAlcance = latestSnapshots.reduce((acc, item) => acc + cleanNumber(item.metricas?.alcance), 0);
+  const totalAlcance = latestSnapshots.reduce((acc, item) => {
+    if (item.plataforma.toLowerCase() === 'spotify') return acc;
+    return acc + cleanNumber(item.metricas?.alcance);
+  }, 0);
   const totalImpactoCombinado = totalReproducciones + totalAlcance;
   const totalImpacts = totalImpactoCombinado;
   const totalInteractions = latestSnapshots.reduce((acc, item) => acc + cleanNumber(item.metricas?.interacciones), 0);
@@ -822,7 +832,10 @@ export const searchUniversalRecords = (
   let globalInteractions = 0;
 
   globalLatestSnapshots.forEach(rec => {
-    const impact = cleanNumber(rec.metricas?.reproducciones) + cleanNumber(rec.metricas?.alcance);
+    const isSpotify = rec.plataforma.toLowerCase() === 'spotify';
+    const reach = isSpotify ? 0 : cleanNumber(rec.metricas?.alcance);
+    const reprod = cleanNumber(rec.metricas?.reproducciones);
+    const impact = reprod + reach;
     const interactions = cleanNumber(rec.metricas?.interacciones);
 
     globalPlatformImpactTotals[rec.plataforma] += impact;

@@ -70,22 +70,27 @@ export const OverviewView: React.FC = () => {
           if (activeCampaign === 'all') return true;
           return r.campania.toLowerCase().replace(/[^a-z0-9]/g, '_') === activeCampaign || r.campania.toLowerCase() === activeCampaign.toLowerCase();
         })
-        .map(r => ({
-          id: r.id,
-          platform: (r.plataforma.toLowerCase() === 'x' ? 'twitter' : r.plataforma.toLowerCase()) as any,
-          title: r.titulo,
-          type: r.tipoContenido,
-          campaignId: r.campania.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-          publishedAt: r.fecha,
-          url: r.enlacePublicacion,
-          metrics: {
-            viewsOrReach: cleanNumber(r.metricas.reproducciones) + cleanNumber(r.metricas.alcance),
-            interactions: cleanNumber(r.metricas.interacciones),
-            engagementRate: cleanNumber(r.metricas.alcance) > 0 ? Number(((cleanNumber(r.metricas.interacciones) / cleanNumber(r.metricas.alcance)) * 100).toFixed(2)) : 5.2,
-            sharesOrReposts: cleanNumber(r.metricas.guardados),
-            saves: cleanNumber(r.metricas.guardados)
-          }
-        }))
+        .map(r => {
+          const isSpotify = r.plataforma.toLowerCase() === 'spotify';
+          const reach = isSpotify ? 0 : cleanNumber(r.metricas.alcance);
+          const reprod = cleanNumber(r.metricas.reproducciones);
+          return {
+            id: r.id,
+            platform: (r.plataforma.toLowerCase() === 'x' ? 'twitter' : r.plataforma.toLowerCase()) as any,
+            title: r.titulo,
+            type: r.tipoContenido,
+            campaignId: r.campania.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+            publishedAt: r.fecha,
+            url: r.enlacePublicacion,
+            metrics: {
+              viewsOrReach: reprod + reach,
+              interactions: cleanNumber(r.metricas.interacciones),
+              engagementRate: reach > 0 ? Number(((cleanNumber(r.metricas.interacciones) / reach) * 100).toFixed(2)) : 5.2,
+              sharesOrReposts: cleanNumber(r.metricas.guardados),
+              saves: cleanNumber(r.metricas.guardados)
+            }
+          };
+        })
         .sort((a, b) => b.metrics.viewsOrReach - a.metrics.viewsOrReach);
     }
     return Object.values(filteredPlatformDataMap)

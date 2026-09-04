@@ -399,7 +399,7 @@ export const SingleDayView: React.FC = () => {
                   <div>
                     <span className="text-[10px] text-slate-500 block uppercase font-semibold">Alcance</span>
                     <span className="font-mono font-bold text-gold-400">
-                      {rec.metricas.alcance.toLocaleString()}
+                      {rec.plataforma.toLowerCase() === 'spotify' || !rec.metricas.alcance ? '—' : rec.metricas.alcance.toLocaleString()}
                     </span>
                   </div>
                   <div>

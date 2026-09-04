@@ -366,10 +366,12 @@ export const transformSheetsRowToUniversalRecord = (row: RawGoogleSheetsRow, ind
   const tema = String(row.Tema_Campania || row.tema_campania || row.Tema || row.tema || row.Campania || row.campania || 'Ibuprofeno');
   const titulo = String(row.Titulo || row.titulo || `${tema} - Registro Oficial`);
   const plataforma = normalizePlatformName(row.Plataforma || row.plataforma);
+  const isSpotify = plataforma === 'Spotify';
   const tipoContenido = normalizeContentType(row.Tipo || row.tipo);
 
   const reprod = cleanNumber(row.Reproducciones ?? row.reproducciones ?? row.Streams ?? row.streams ?? row.Views ?? row.views);
-  const alc = cleanNumber(row.Alcance ?? row.alcance ?? row.Reach ?? row.reach);
+  // Spotify has NO native reach. Must be strictly 0.
+  const alc = isSpotify ? 0 : cleanNumber(row.Alcance ?? row.alcance ?? row.Reach ?? row.reach);
   const inter = cleanNumber(row.Interacciones ?? row.interacciones);
 
   const enlace = row.Enlace || row.enlace || row.Link || row.link;
@@ -388,7 +390,7 @@ export const transformSheetsRowToUniversalRecord = (row: RawGoogleSheetsRow, ind
     metricas: {
       reproducciones: reprod,
       alcance: alc,
-      impresiones: Math.round(alc * 1.4),
+      impresiones: isSpotify ? 0 : Math.round(alc * 1.4),
       interacciones: inter,
       guardados: Math.round(inter * 0.25),
       clics: Math.round(inter * 0.15)

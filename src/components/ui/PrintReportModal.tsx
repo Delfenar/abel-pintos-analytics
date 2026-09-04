@@ -23,7 +23,10 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({ isOpen, onCl
 
   // 100% Dynamic Calculations for the filtered results strictly using getLatestSnapshotPerContent and cleanNumber
   const totalReproducciones = results.reduce((acc, item) => acc + cleanNumber(item.metricas?.reproducciones), 0);
-  const totalAlcance = results.reduce((acc, item) => acc + cleanNumber(item.metricas?.alcance), 0);
+  const totalAlcance = results.reduce((acc, item) => {
+    if (item.plataforma.toLowerCase() === 'spotify') return acc;
+    return acc + cleanNumber(item.metricas?.alcance);
+  }, 0);
   const totalImpactoCombinado = totalReproducciones + totalAlcance;
   const totalInteractions = results.reduce((acc, item) => acc + cleanNumber(item.metricas?.interacciones), 0);
   const topPlatform = universalSearchAggregation.topPlatform;
@@ -244,7 +247,9 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({ isOpen, onCl
                         {item.fecha}
                       </td>
                       <td className="py-2 px-3 text-right font-mono font-bold">{item.metricas.reproducciones.toLocaleString()}</td>
-                      <td className="py-2 px-3 text-right font-mono font-bold text-gold-400 print:text-amber-800">{item.metricas.alcance.toLocaleString()}</td>
+                      <td className="py-2 px-3 text-right font-mono font-bold text-gold-400 print:text-amber-800">
+                        {item.plataforma.toLowerCase() === 'spotify' || !item.metricas.alcance ? '—' : item.metricas.alcance.toLocaleString()}
+                      </td>
                       <td className="py-2 px-3 text-right font-mono text-rose-400 print:text-rose-700">{item.metricas.interacciones.toLocaleString()}</td>
                     </tr>
                   ))}
